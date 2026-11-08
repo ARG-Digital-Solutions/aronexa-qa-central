@@ -28,6 +28,7 @@ export default defineConfig({
     trace: 'retain-on-failure',
     video: 'retain-on-failure',
     actionTimeout: 10_000,
+    launchOptions: { executablePath: process.env.ARONEXA_CHROMIUM_BIN || undefined },
   },
   projects: [
     {name: 'chromium-desktop', use: {...devices['Desktop Chrome'], viewport: {width: 1440, height: 900}}},

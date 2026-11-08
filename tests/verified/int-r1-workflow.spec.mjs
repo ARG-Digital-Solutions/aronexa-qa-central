@@ -35,7 +35,9 @@ async function register(page, name) {
 }
 async function book(page, date) {
   await page.getByRole('navigation',{name:'Reception navigation'}).getByRole('button',{name:/Appointments.*check-in/i}).click();
-  await page.locator('#apt-patient').selectOption({label:/Synthetic QA Patient/});
+  const patientId = await page.locator('#apt-patient option').filter({hasText:'Synthetic QA Patient'}).first().getAttribute('value');
+  expect(patientId).toBeTruthy();
+  await page.locator('#apt-patient').selectOption(patientId);
   await page.locator('#apt-doctor').selectOption('SYN-D01');
   await page.locator('#apt-date').fill(date);
   await page.locator('#apt-slot').selectOption('09:00');
