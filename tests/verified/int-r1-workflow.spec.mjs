@@ -47,7 +47,7 @@ async function book(page, date) {
   return card;
 }
 
-test('INT-R1 @workflow — registration, duplicate review and no auto-merge', async ({page}) => {
+test('INT-R1 @workflow ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â registration, duplicate review and no auto-merge', async ({page}) => {
   await openDemo(page);
   await register(page,'Synthetic QA Patient');
   await page.getByRole('navigation',{name:'Reception navigation'}).getByRole('button',{name:/Register patient/i}).click();
@@ -60,20 +60,20 @@ test('INT-R1 @workflow — registration, duplicate review and no auto-merge', as
   await expect(dialog).not.toBeVisible();
 });
 
-test('INT-R1 @workflow — booking, slot conflict, cancellation and slot release', async ({page}) => {
+test('INT-R1 @workflow ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â booking, slot conflict, cancellation and slot release', async ({page}) => {
   await openDemo(page);
   await register(page,'Synthetic QA Patient');
   const card=await book(page,day(1));
   // The booking form still has the values: a duplicate must fail.
   await page.getByRole('button',{name:'Book DEMO appointment'}).click();
-  await expect(page.getByText(/slot is occupied/i)).toBeVisible();
-  await card.getByRole('button',{name:/Cancel appointment/i}).click();
+  await expect(page.locator('#apt-error')).toContainText(/slot is occupied/i);
+  await card.getByRole('button',{name:/^Cancel DEMO-APT-/i}).click();
   await expect(card).toContainText('Appointment status: Cancelled');
   await page.getByRole('button',{name:'Book DEMO appointment'}).click();
   await expect(page.locator('article.appointment-card').filter({hasText:/Appointment status:\s*Booked/})).toHaveCount(1);
 });
 
-test('INT-R1 @workflow — reschedule preserves a single booking and history', async ({page}) => {
+test('INT-R1 @workflow ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â reschedule preserves a single booking and history', async ({page}) => {
   await openDemo(page);
   await register(page,'Synthetic QA Patient');
   const card=await book(page,day(1));
@@ -87,7 +87,7 @@ test('INT-R1 @workflow — reschedule preserves a single booking and history', a
   await expect(card).toContainText(/Rescheduled from/i);
 });
 
-test('INT-R1 @workflow — check-in only on appointment date, no clinical mutation', async ({page}) => {
+test('INT-R1 @workflow ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â check-in only on appointment date, no clinical mutation', async ({page}) => {
   await openDemo(page);
   await register(page,'Synthetic QA Patient');
   const card=await book(page,day(0));
