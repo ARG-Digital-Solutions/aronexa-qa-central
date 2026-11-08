@@ -1,0 +1,22 @@
+{
+  "name": "aronexa-qa-central",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Versioned synthetic-only independent Playwright QA for AroNexa",
+  "scripts": {
+    "test": "playwright test",
+    "test:int-r1": "playwright test tests/verified --project chromium-desktop",
+    "test:responsive": "playwright test tests/verified/int-r1-responsive.spec.mjs --project chromium-desktop",
+    "test:all-views": "playwright test tests/verified --project chromium-desktop",
+    "test:legacy": "playwright test -c legacy/playwright.config.mjs",
+    "test:list": "playwright test --list",
+    "test:report": "playwright show-report artifacts/playwright-report"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.0"
+  }
+}

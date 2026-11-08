@@ -1,0 +1,139 @@
+{
+  "kind": "archived_surefire_evidence_only",
+  "source": "AroNexa-C2-Test.zip",
+  "classes": [
+    {
+      "class": "com.argdigital.aronexa.ArchitectureTests",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.AronexaApplicationTests",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.auth.AuthRoleBoundaryTests",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.auth.AuthenticationIntegrationTests",
+      "tests": 12,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.auth.OrganizationAccessIntegrationTests",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.auth.PostgresTenantRlsTests",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.auth.TenantAuthorizationTests",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.moduleregistry.ModuleAccessServiceTests",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.moduleregistry.ModuleRegistryPostgresTests",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.organization.OrganizationPersistenceTests",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.patient.PatientAccessServiceIntegrationTests",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.patient.PatientIdentitySchemaTests",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.patient.PatientRegistrationRulesTests",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.patient.PatientRuntimeBoundaryTests",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.patient.SyntheticRegistrationAttemptLimiterTests",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.patient.SyntheticRegistrationHttpAcceptanceTests",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.patient.SyntheticRegistrationIntegrationTests",
+      "tests": 27,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "class": "com.argdigital.aronexa.patient.SyntheticRegistrationProofTests",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "totals": {
+    "tests": 133,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "caveat": "Archive attests prior local execution, not current HEAD or latest GitHub CI."
+}

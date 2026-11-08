@@ -1,0 +1,13 @@
+node_modules/
+artifacts/
+legacy/artifacts/
+legacy/node_modules/
+playwright-report/
+test-results/
+coverage/
+.env
+.env.*
+!.env.example
+*.log
+*.bak-*
+.DS_Store

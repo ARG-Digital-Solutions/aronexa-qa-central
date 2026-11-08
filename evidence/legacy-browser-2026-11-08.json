@@ -1,0 +1,9 @@
+{
+  "kind": "archived_playwright_junit_evidence_only",
+  "source": "Testing Suite AroNexa.zip/artifacts/results.xml",
+  "totals": {
+    "total": 69,
+    "skipped": 69
+  },
+  "caveat": "Zero failures does NOT mean PASS when every test is skipped."
+}

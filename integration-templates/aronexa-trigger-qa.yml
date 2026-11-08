@@ -1,0 +1,26 @@
+# TEMPLATE ONLY — NOT DEPLOYED TO THE AroNexa PRODUCT REPOSITORY.
+name: Dispatch independent synthetic QA (optional)
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+jobs:
+  qa-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send exact PR head SHA to the separate QA repository
+        env:
+          GH_TOKEN: ${{ secrets.ARONEXA_QA_DISPATCH_TOKEN }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN"
+          # Require explicit allowlisting and review of PR head before dispatching.
+          jq -n --arg ref "$HEAD_SHA" '{event_type:"aronexa-frontend-review",client_payload:{app_ref:$ref}}' |
+            curl --fail-with-body -sS -X POST \
+              -H "Authorization: Bearer ${GH_TOKEN}" \
+              -H 'Accept: application/vnd.github+json' \
+              -H 'Content-Type: application/json' \
+              --data-binary @- \
+              https://api.github.com/repos/ARG-Digital-Solutions/aronexa-qa-central/dispatches

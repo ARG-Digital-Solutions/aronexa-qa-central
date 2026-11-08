@@ -1,0 +1,54 @@
+{
+  "archives": [
+    {
+      "archive": "AeroNexa Feature Testing 06-Nov.zip",
+      "sha256": "2acd943e86d227f0a74fc257ef3ad8921bbce2fbe8e6bf390ec651b6e9166d2f",
+      "bytes": 218
+    },
+    {
+      "archive": "AroNexa-C2-Test.zip",
+      "sha256": "adc55efccb60ee1ca6f45fd2dcbc69cc66d7ffb16f323fa0d87f840d85a58ca4",
+      "bytes": 30531715
+    },
+    {
+      "archive": "AroNexa-INT-R1-Review.zip",
+      "sha256": "fe4ee7973a25a5f03bb188521baaebe081b41abfe9cd340be5853c4f9449040e",
+      "bytes": 18627889
+    },
+    {
+      "archive": "Testing Suite AroNexa.zip",
+      "sha256": "786ce329a25bad734205f7504338aabd7216b544b7a1c436d6cc4c1e5bae6338",
+      "bytes": 4770446
+    },
+    {
+      "archive": "AroNexa-Codex-Worktrees.zip",
+      "sha256": "262860c9e67ad9435c67c8a0c41d8a4bc199f5fd5ae97a48df99db55ef6e3144",
+      "bytes": 38187664
+    },
+    {
+      "archive": "AroNexa-Codex-Worktrees(1).zip",
+      "sha256": "262860c9e67ad9435c67c8a0c41d8a4bc199f5fd5ae97a48df99db55ef6e3144",
+      "bytes": 38187664
+    },
+    {
+      "archive": "codex.zip",
+      "sha256": "a7cf3cd320294b0f917cbc14563054e66bd031cecea7c12cf32a024b51105f50",
+      "bytes": 162409
+    },
+    {
+      "archive": "codex(1).zip",
+      "sha256": "a7cf3cd320294b0f917cbc14563054e66bd031cecea7c12cf32a024b51105f50",
+      "bytes": 162409
+    }
+  ],
+  "duplicate_pairs": [
+    [
+      "AroNexa-Codex-Worktrees.zip",
+      "AroNexa-Codex-Worktrees(1).zip"
+    ],
+    [
+      "codex.zip",
+      "codex(1).zip"
+    ]
+  ]
+}

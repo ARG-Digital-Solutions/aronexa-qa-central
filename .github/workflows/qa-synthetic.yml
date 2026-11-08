@@ -1,0 +1,87 @@
+name: AroNexa Synthetic Browser QA
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      app_ref:
+        description: 'AroNexa app commit SHA or branch; defaults to pinned PR #61 code'
+        required: false
+        type: string
+  repository_dispatch:
+    types: [aronexa-frontend-review]
+  schedule:
+    - cron: '20 2 * * 1-5'
+permissions:
+  contents: read
+concurrency:
+  group: aronexa-qa-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  isolated-frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check prerequisites (no deployment or database permissions)
+        shell: bash
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+        run: |
+          if [ -z "$SOURCE_READ_TOKEN" ]; then
+            echo 'Missing ARONEXA_SOURCE_READ_TOKEN (read-only Contents permission for private app repo)' >&2
+            exit 1
+          fi
+      - name: Checkout QA code
+        uses: actions/checkout@v4
+        with:
+          path: qa
+          persist-credentials: false
+      - name: Checkout pinned AroNexa source into isolated workspace
+        uses: actions/checkout@v4
+        with:
+          repository: ARG-Digital-Solutions/aronexa-healthcare-platform
+          ref: ${{ github.event.client_payload.app_ref || inputs.app_ref || vars.ARONEXA_APP_REF || '52809efbc077cd6abb6860d870cc487cc8eddc42' }}
+          token: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          path: app
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: qa/package-lock.json
+      - name: Install isolated QA dependencies and Chromium
+        working-directory: qa
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Install isolated frontend dependencies
+        working-directory: app/frontend
+        run: npm ci --no-audit --no-fund
+      - name: Verify frontend build and existing model tests
+        working-directory: app/frontend
+        run: |
+          npm run build
+          node --experimental-strip-types --test test/appointment-demo.test.mjs
+      - name: Start Vite on isolated loopback and run verified browser suite
+        shell: bash
+        env:
+          ARONEXA_BASE_URL: http://127.0.0.1:5175/
+        run: |
+          set -euo pipefail
+          (cd app/frontend && npm run dev -- --host 127.0.0.1 --port 5175 --strictPort) > /tmp/aronexa-vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in {1..30}; do if curl --silent --fail "$ARONEXA_BASE_URL" >/dev/null; then break; fi; sleep 1; done
+          curl --fail "$ARONEXA_BASE_URL" >/dev/null
+          (cd qa && npx playwright test tests/verified --project chromium-desktop)
+      - name: Upload Playwright failure traces, screenshots and JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aronexa-synthetic-qa-${{ github.run_id }}
+          path: |
+            qa/artifacts/
+          if-no-files-found: warn
+          retention-days: 14
