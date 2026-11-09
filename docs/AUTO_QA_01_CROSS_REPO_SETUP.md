@@ -40,7 +40,7 @@ gh pr edit 64 --repo ARG-Digital-Solutions/aronexa-healthcare-platform --add-lab
 5. Watch the product `AroNexa - Central QA Handoff` run and QA Central `AroNexa Central QA - Cross Repository Handoff`, plus the child `AroNexa P01-T07 INT-REG01 Independent QA`. Verify the application commit status context and exact request key link to the same test child run. Confirm both complete. A green synthetic build is **not** independent sign-off.
 6. Have an independent reviewer disposition the evidence and separately authorize the next development task.
 
-If the label is absent, the product handoff job is **SKIPPED**; this **must never be interpreted as QA PASS**. If policy requires QA on every PR, use a reviewed process that requires plan assignment before eligible work proceeds. Enforcement via GitHub protected branch/rulesets depends on the repository's subscription and org policies; current private repo ruleset API access was restricted when checked.
+The product handoff job **fails explicitly** when a PR lacks exactly one reviewed QA plan label or originates from an unauthorized fork. This prevents GitHub's skipped-job-as-success behavior. After activation, existing internal PRs without a reviewed plan may be blocked; do not invent a generic pass or suppress the gate. Register a suitable plan and apply its label before proceeding. Enforcement via GitHub protected branch/rulesets depends on the repository's subscription and org policies; current private repo ruleset API access was restricted when checked.
 
 ## Future QA tasks
 
