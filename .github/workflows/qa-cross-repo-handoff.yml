@@ -24,6 +24,7 @@ jobs:
       request_key: ${{ steps.plan.outputs.request_key }}
       frontend_sha: ${{ steps.plan.outputs.frontend_sha }}
       workflow: ${{ steps.plan.outputs.workflow }}
+      qa_sha: ${{ steps.plan.outputs.qa_sha }}
       qa_issue: ${{ steps.plan.outputs.qa_issue }}
       app_repo: ${{ steps.plan.outputs.app_repo }}
     steps:
@@ -106,6 +107,7 @@ jobs:
           echo "app_repo=$SOURCE_REPO" >> "$GITHUB_OUTPUT"
           echo "frontend_sha=$(jq -r '.frozen_frontend_sha' "$PLAN_PATH")" >> "$GITHUB_OUTPUT"
           echo "workflow=$(jq -r '.qa_workflow' "$PLAN_PATH")" >> "$GITHUB_OUTPUT"
+          echo "qa_sha=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
           echo "qa_issue=$(jq -r '.qa_issue_number' "$PLAN_PATH")" >> "$GITHUB_OUTPUT"
           echo "QA Central plan validated at $GITHUB_SHA; exact source PR and label verified"
 
@@ -162,26 +164,48 @@ jobs:
           PLAN_WORKFLOW: ${{ needs.validate.outputs.workflow }}
           REQUEST_KEY: ${{ needs.validate.outputs.request_key }}
           APP_SHA: ${{ needs.validate.outputs.app_sha }}
+          QA_SHA: ${{ needs.validate.outputs.qa_sha }}
           DISPATCHED_AT: ${{ steps.dispatch.outputs.dispatched_at }}
         run: |
           set -euo pipefail
           test -n "$DISPATCHED_AT" || { echo "Missing dispatch timestamp" >&2; exit 1; }
+          [[ "$QA_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Invalid trusted QA SHA" >&2; exit 1; }
+          case "$PLAN_WORKFLOW" in
+            qa-int-reg01.yml) PREFIX="INT-REG01" ;;
+            qa-int-reg02a.yml) PREFIX="INT-REG02A" ;;
+            *) echo "Unknown reviewed child workflow" >&2; exit 1 ;;
+          esac
+          EXPECTED_TITLE="$PREFIX $REQUEST_KEY / $APP_SHA"
           RID=""
           for attempt in $(seq 1 45); do
             RUN_LIST=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$PLAN_WORKFLOW" \
-              --event workflow_dispatch --limit 100 --json databaseId,displayTitle,createdAt,headBranch)
-            RID=$(jq -r --arg k "$REQUEST_KEY" --arg sha "$APP_SHA" --arg after "$DISPATCHED_AT" \
-              '[.[] | select(.headBranch == "main") | select(.createdAt >= $after) | select(.displayTitle | endswith(" " + $k + " / " + $sha))] | sort_by(.databaseId) | last | .databaseId // empty' \
+              --event workflow_dispatch --limit 100 --json databaseId,displayTitle,createdAt,headBranch,headSha)
+            RID=$(jq -r --arg title "$EXPECTED_TITLE" --arg qasha "$QA_SHA" --arg after "$DISPATCHED_AT" \
+              '[.[] | select(.headBranch == "main") | select(.headSha == $qasha) | select(.createdAt >= $after) | select(.displayTitle == $title)] | if length == 1 then .[0].databaseId else empty end' \
               <<< "$RUN_LIST")
             test -n "$RID" && break
             sleep 3
           done
           if test -z "$RID"; then
-            echo "Correlated QA workflow missing; fail closed" >&2
+            echo "Unique exact-SHA correlated QA workflow missing; fail closed" >&2
             echo "result=failure" >> "$GITHUB_OUTPUT"
             echo "test_run_url=https://github.com/$GITHUB_REPOSITORY/actions" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          # Never trust workflow run titles alone: verify GitHub's workflow identity and execution SHA.
+          EXPECTED_WF_ID=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/$PLAN_WORKFLOW" --jq '.id')
+          [[ "$EXPECTED_WF_ID" =~ ^[0-9]+$ ]] || { echo "Unknown workflow ID" >&2; exit 1; }
+          RUN_DETAILS=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RID")
+          jq -e --arg qasha "$QA_SHA" --arg title "$EXPECTED_TITLE" \
+            --arg wf ".github/workflows/$PLAN_WORKFLOW" --arg after "$DISPATCHED_AT" \
+            --argjson workflow_id "$EXPECTED_WF_ID" '
+            .event == "workflow_dispatch" and .head_branch == "main" and
+            .head_sha == $qasha and .workflow_id == $workflow_id and
+            .path == $wf and .display_title == $title and .created_at >= $after
+          ' <<< "$RUN_DETAILS" >/dev/null || {
+            echo "Child workflow identity or source revision mismatch" >&2
+            exit 1
+          }
           echo "test_run_id=$RID" >> "$GITHUB_OUTPUT"
           echo "test_run_url=https://github.com/$GITHUB_REPOSITORY/actions/runs/$RID" >> "$GITHUB_OUTPUT"
           set +e
@@ -191,15 +215,18 @@ jobs:
           RESULT_JSON=$(gh run view "$RID" --repo "$GITHUB_REPOSITORY" \
             --json conclusion,status,jobs,headSha,url)
           echo "$RESULT_JSON" | jq -c '{status,conclusion,jobs:[.jobs[]|{name,conclusion}]}'
-          if test "$WATCH_EXIT" -eq 0 && jq -e --arg workflow "$PLAN_WORKFLOW" '
-            .status == "completed" and .conclusion == "success" and
+          if test "$WATCH_EXIT" -eq 0 && jq -e --arg workflow "$PLAN_WORKFLOW" --arg qasha "$QA_SHA" '
+            .status == "completed" and .conclusion == "success" and .headSha == $qasha and
             ([.jobs[] | select(.conclusion != "success")] | length == 0) and
             (if $workflow == "qa-int-reg01.yml" then
-              ([.jobs[] | select(.name | contains("Backend full regression"))] | length == 1) and
-              ([.jobs[] | select(.name | contains("Independent frozen"))] | length == 1)
+              ([.jobs[].name] | sort) ==
+                (["Check approved source pins and disposable-only gate",
+                  "Backend full regression + disposable PostgreSQL",
+                  "Independent frozen Reception/Appointment baseline"] | sort)
              elif $workflow == "qa-int-reg02a.yml" then
-              ([.jobs[] | select(.name | contains("Check reviewed plan and exact synthetic PR source"))] | length == 1) and
-              ([.jobs[] | select(.name | contains("Pinned frontend build, contract, model and Playwright QA"))] | length == 1)
+              ([.jobs[].name] | sort) ==
+                (["Check reviewed plan and exact synthetic PR source",
+                  "Pinned frontend build, contract, model and Playwright QA"] | sort)
              else false end)
           ' <<< "$RESULT_JSON" > /dev/null; then
             echo "result=success" >> "$GITHUB_OUTPUT"
