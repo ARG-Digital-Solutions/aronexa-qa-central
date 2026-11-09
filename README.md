@@ -61,3 +61,8 @@ If the organization disallows member repo creation, ask an org owner to create a
 4. Keep acceptance evidence linked to **exact app SHA + QA SHA**, JUnit outcome, browser project, and timestamp. No merge or release authorization is implied by green QA.
 
 See `docs/ARCHIVE_AUDIT.md`, `docs/TEST_INVENTORY.md` and `docs/TEST_GOVERNANCE.md`.
+
+
+### Secure registration INT-REG01 (pending QA workflow review)
+
+To keep all new QA tasks centralized, use `scripts/Run-P01-T07-INT-REG01-CentralQA.ps1` **after** the reviewed `qa-int-reg01.yml` workflow lands on QA Central `main`. The older `run_p01_t07_int_reg01_ci.ps1` is product-repository-oriented and should not be the ongoing central QA entrypoint. See [the INT-REG01 plan](docs/P01_T07_INT_REG01_QA_PLAN.md). The launcher triggers GitHub Actions and records evidence in local `artifacts/int-reg01/`; it does not run Docker or migrate any local database.
