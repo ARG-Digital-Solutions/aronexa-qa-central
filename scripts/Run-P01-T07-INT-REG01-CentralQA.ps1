@@ -3,7 +3,7 @@
 # Requires QA Central workflow qa-int-reg01.yml on default branch after approved merge.
 [CmdletBinding()]
 param(
-    [string]$ProductSha = '8788b89ddceb70c085818939a82c3476887006bd',
+    [string]$ProductSha = '7f1fb76ce80a9fb838df06fc616e14f169bc2dd4',
     [string]$FrontendSha = '52809efbc077cd6abb6860d870cc487cc8eddc42'
 )
 $ErrorActionPreference = 'Stop'
@@ -12,7 +12,7 @@ $qaRepo = 'ARG-Digital-Solutions/aronexa-qa-central'
 $appRepo = 'ARG-Digital-Solutions/aronexa-healthcare-platform'
 $workflow = 'qa-int-reg01.yml'
 $sourceBranch = 'codex/p01-t07-int-reg01-contract-20261109'
-$approvedProductSha = '8788b89ddceb70c085818939a82c3476887006bd'
+$approvedProductSha = '7f1fb76ce80a9fb838df06fc616e14f169bc2dd4'
 $approvedFrontendSha = '52809efbc077cd6abb6860d870cc487cc8eddc42'
 
 function Invoke-Gh([string[]]$Arguments) {
