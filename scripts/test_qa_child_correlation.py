@@ -31,8 +31,9 @@ job_match = re.search(
 assert job_match, "Expected production job-evidence match expression"
 JOB_FILTER = job_match.group(1)
 
-def jq(expr, payload, vars=None):
-    cmd = ["jq", "-er"]
+def jq(expr, payload, vars=None, exit_on_false=False):
+    # Production child search uses -r (empty means no match); job gate uses -e.
+    cmd = ["jq", "-er" if exit_on_false else "-r"]
     for key, value in (vars or {}).items():
         cmd.extend(["--arg", key, str(value)])
     cmd.append(expr)
@@ -100,7 +101,7 @@ acceptance = [
      complete([old_guard,old_backend,old_frontend]), False),
 ]
 for label, workflow, payload, expected in acceptance:
-    result = jq(JOB_FILTER,payload,{"workflow":workflow})
+    result = jq(JOB_FILTER,payload,{"workflow":workflow}, exit_on_false=True)
     ok = result.returncode == 0 and result.stdout.strip() == "true"
     assert ok == expected, (label, result.returncode, result.stdout, result.stderr)
     print(f"PASS: {label}")
