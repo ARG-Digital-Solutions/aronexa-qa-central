@@ -1,0 +1,182 @@
+name: AroNexa P01-T07 INT-REG02A Independent Frontend QA
+run-name: "INT-REG02A ${{ inputs.request_id || 'manual' }} / ${{ inputs.app_sha }}"
+# Test-only. No backend, database, customer data or deployment.
+on:
+  workflow_dispatch:
+    inputs:
+      app_sha:
+        description: Exact reviewed product PR 67 head SHA
+        required: true
+        type: string
+      acknowledge_disposable_only:
+        description: I authorize synthetic-only UI tests, no real patient or original database
+        required: true
+        type: boolean
+        default: false
+      request_id:
+        description: Audit correlation only
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: int-reg02a-${{ inputs.app_sha }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Check reviewed plan and exact synthetic PR source
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: qa
+          persist-credentials: false
+      - name: Reject unreviewed SHA, plan, PR or missing authorization
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          APP_SHA: ${{ inputs.app_sha }}
+          ACK: ${{ inputs.acknowledge_disposable_only }}
+        run: |
+          set -euo pipefail
+          test "$ACK" = "true"
+          test -n "$GH_TOKEN"
+          [[ "$APP_SHA" =~ ^[0-9a-f]{40}$ ]]
+          PLAN=qa/qa/plans/P01_T07_INT_REG_02A.json
+          test -f "$PLAN"
+          test "$(jq -r '.plan_id' "$PLAN")" = "P01_T07_INT_REG_02A"
+          test "$(jq -r '.qa_workflow' "$PLAN")" = "qa-int-reg02a.yml"
+          test "$(jq -r '.approved_source_sha' "$PLAN")" = "$APP_SHA" || {
+            echo "Unreviewed source change: update plan and reapprove" >&2; exit 1;
+          }
+          test "$(jq -r '.source_baseline_sha' "$PLAN")" = "52809efbc077cd6abb6860d870cc487cc8eddc42"
+          test "$(jq -r '.source_pr_number' "$PLAN")" = "67"
+          test "$(jq -r '.test_only' "$PLAN")" = "true"
+          test "$(jq -r '.customer_release_allowed_on_ci_pass' "$PLAN")" = "false"
+          gh api repos/ARG-Digital-Solutions/aronexa-healthcare-platform/pulls/67 |
+            jq -e --arg sha "$APP_SHA" '
+              .state == "open" and .head.sha == $sha and
+              .head.repo.full_name == "ARG-Digital-Solutions/aronexa-healthcare-platform" and
+              .base.ref == "feature/p01-t07-appointments-demo-20261108"
+            ' >/dev/null
+          echo "Exact reviewed PR and synthetic-only guard PASS"
+
+  frontend:
+    name: Pinned frontend build, contract, model and Playwright QA
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: qa
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ARG-Digital-Solutions/aronexa-healthcare-platform
+          ref: ${{ inputs.app_sha }}
+          token: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          path: app
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Verify exact commit, three-file scope and no live adapter
+        shell: bash
+        working-directory: app
+        env:
+          APP_SHA: ${{ inputs.app_sha }}
+          BASE_SHA: 52809efbc077cd6abb6860d870cc487cc8eddc42
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APP_SHA"
+          test "$(git merge-base "$BASE_SHA" HEAD)" = "$BASE_SHA"
+          mapfile -t changed < <(git diff --name-only "$BASE_SHA" HEAD)
+          test "${#changed[@]}" -eq 3
+          for file in "${changed[@]}"; do
+            case "$file" in
+              frontend/src/registrationContractPreview.ts|frontend/test/registration-contract-preview.test.mjs|docs/phases/P01_T07_INT_REG02A_SYNTHETIC_SEAM.md) ;;
+              *) echo "Unapproved changed path: $file" >&2; exit 1 ;;
+            esac
+          done
+          if grep -Fq 'registrationContractPreview' frontend/src/App.tsx; then
+            echo "Live/demo App.tsx must not invoke the preview adapter" >&2; exit 1
+          fi
+          if grep -Eq 'fetch[[:space:]]*\(|XMLHttpRequest|WebSocket[[:space:]]*\(|localStorage|sessionStorage|sendBeacon[[:space:]]*\(' frontend/src/registrationContractPreview.ts; then
+            echo "Network/storage activity forbidden" >&2; exit 1
+          fi
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: app/frontend/package-lock.json
+      - name: Install frontend
+        working-directory: app/frontend
+        run: npm ci --no-audit --no-fund
+      - name: Build and assert ten contract, 26 Reception, 20 Appointments tests
+        shell: bash
+        working-directory: app/frontend
+        run: |
+          set -euo pipefail
+          npm run build
+          node --experimental-strip-types --test test/registration-contract-preview.test.mjs | tee /tmp/int-reg02a-contract.tap
+          grep -qx '# pass 10' /tmp/int-reg02a-contract.tap
+          grep -qx '# fail 0' /tmp/int-reg02a-contract.tap
+          node --experimental-strip-types --test test/reception-demo.test.mjs | tee /tmp/int-reg02a-reception.tap
+          grep -qx '# pass 26' /tmp/int-reg02a-reception.tap
+          grep -qx '# fail 0' /tmp/int-reg02a-reception.tap
+          node --experimental-strip-types --test test/appointment-demo.test.mjs | tee /tmp/int-reg02a-appointments.tap
+          grep -qx '# pass 20' /tmp/int-reg02a-appointments.tap
+          grep -qx '# fail 0' /tmp/int-reg02a-appointments.tap
+      - name: Install independent browser harness
+        working-directory: qa
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Run verified Playwright on local synthetic frontend
+        shell: bash
+        env:
+          ARONEXA_BASE_URL: http://127.0.0.1:5175/
+        run: |
+          set -euo pipefail
+          (cd app/frontend && npm run dev -- --host 127.0.0.1 --port 5175 --strictPort) >/tmp/int-reg02a-vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in {1..30}; do
+            if curl --silent --fail "$ARONEXA_BASE_URL" >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail "$ARONEXA_BASE_URL" >/dev/null
+          (cd qa && npx playwright test tests/verified --project chromium-desktop)
+      - name: Record synthetic source provenance
+        if: always()
+        shell: bash
+        env:
+          APP_SHA: ${{ inputs.app_sha }}
+        run: |
+          mkdir -p qa/artifacts/int-reg02a
+          python3 - <<'PY'
+          import datetime, json, os, pathlib
+          record={
+            "plan":"P01_T07_INT_REG_02A","product_pr":67,
+            "source_sha":os.environ["APP_SHA"],
+            "qa_workflow_sha":os.environ["GITHUB_SHA"],
+            "run_id":os.environ["GITHUB_RUN_ID"],
+            "run_attempt":os.environ["GITHUB_RUN_ATTEMPT"],
+            "executed_at_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "data":"synthetic-only","real_patient_data":False,
+            "live_backend_connection":False,"release_authorized":False,
+            "test_outcome":"SEE_JOBS_AND_TEST_REPORTS"
+          }
+          pathlib.Path("qa/artifacts/int-reg02a/provenance.json").write_text(json.dumps(record,indent=2)+"\n")
+          PY
+      - name: Upload Playwright traces and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: int-reg02a-${{ github.run_id }}
+          path: qa/artifacts/
+          if-no-files-found: warn
+          retention-days: 14
