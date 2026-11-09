@@ -18,6 +18,8 @@ jobs:
           persist-credentials: false
       - name: Reject incomplete or unsafe QA plan declarations
         run: python3 scripts/check_qa_plans.py
+      - name: Prove QA plan validation fails closed under unsafe mutations
+        run: python3 scripts/test_qa_plans.py
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
