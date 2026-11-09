@@ -6,6 +6,9 @@
 |---|---|---|---|
 | `tests/verified/int-r1-responsive.spec.mjs` | 4 (1440, 768, 390 and 320 pixel widths) | Navigation, page horizontal overflow, console errors and screenshots | Yes |
 | `tests/verified/int-r1-workflow.spec.mjs` | 4 | Explicit registration/duplicate-review, booking/conflict/cancel/rebooking, reschedule/history, receptionist check-in | Yes |
+| `tests/verified/r3a-accessibility.spec.mjs` | 12 (8 functional + 4 viewport) | Keyboard focus, accessible form errors, native modal, announcements, appointment labels/actions/history and responsive overflow | Yes; automated only |
+
+R3-A automated tests run on the frozen synthetic app commit `52809efbc077cd6abb6860d870cc487cc8eddc42` when the central QA workflow uses its default app SHA. The QA workflow's manual/dispatch app-ref override may select a different revision; always record the tested SHA. **No claim of screen-reader acceptance:** NVDA/VoiceOver review with a human remains pending. The QA workflow uses only a localhost Vite server, never the backend/DB. R3-A originated from the dedicated Windows test kit and has been adapted to the existing central Playwright runner (`.mjs`), avoiding a new standalone local test harness.
 
 ## Pre-existing Playwright test files preserved without modification
 
