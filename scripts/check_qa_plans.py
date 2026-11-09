@@ -7,8 +7,28 @@ import sys
 
 root = pathlib.Path(__file__).resolve().parents[1]
 directory = root / "qa" / "plans"
-required_checks = {"maven_verify_and_testcontainers", "verified_playwright"}
-valid_workflows = {"qa-int-reg01.yml"}
+# Deliberate allowlist: new plans and required checks require reviewed source changes.
+reviewed_plan_specs = {
+    "P01_T07_INT_REG_01": {
+        "workflow": "qa-int-reg01.yml",
+        "checks": {"source_scope_and_disposable_guard", "maven_verify_and_testcontainers", "frozen_frontend_build", "frontend_model_regression", "verified_playwright"},
+        "paths": {
+            "backend/src/test/java/com/argdigital/aronexa/patient/SyntheticRegistrationFrontendContractTests.java",
+            "backend/src/test/resources/contracts/p01-t07-int-reg01-registration-v1.json",
+            "docs/phases/P01_T07_INT_REG01_CONTRACT_AND_GAPS.md",
+            "docs/phases/P01_T07_INT_REG01_BUILD_LOG.md",
+        },
+    },
+    "P01_T07_INT_REG_02A": {
+        "workflow": "qa-int-reg02a.yml",
+        "checks": {"source_scope_and_disposable_guard", "frontend_build", "frontend_model_regression", "contract_preview_tests", "verified_playwright"},
+        "paths": {
+            "frontend/src/registrationContractPreview.ts",
+            "frontend/test/registration-contract-preview.test.mjs",
+            "docs/phases/P01_T07_INT_REG02A_SYNTHETIC_SEAM.md",
+        },
+    },
+}
 
 def fail(message):
     print(f"QA PLAN INVALID: {message}", file=sys.stderr)
@@ -29,8 +49,11 @@ for path in plans:
         fail(f"{path.name}: plan ID must match filename")
     if data.get("source_repository") != "ARG-Digital-Solutions/aronexa-healthcare-platform":
         fail(f"{plan_id}: wrong source repository")
-    if data.get("qa_workflow") not in valid_workflows:
-        fail(f"{plan_id}: unknown unapproved QA workflow")
+    spec = reviewed_plan_specs.get(plan_id)
+    if spec is None:
+        fail(f"{plan_id}: plan has no independently reviewed allowlist")
+    if data.get("qa_workflow") != spec["workflow"]:
+        fail(f"{plan_id}: unapproved workflow for this plan")
     for name in ("source_baseline_sha", "frozen_frontend_sha"):
         if not isinstance(data.get(name), str) or not re.fullmatch("[0-9a-f]{40}", data[name]):
             fail(f"{plan_id}: {name} must be a 40-character SHA")
@@ -44,9 +67,18 @@ for path in plans:
                not any(c in p for c in "*?[]") and ".." not in pathlib.PurePosixPath(p).parts
                for p in paths):
         fail(f"{plan_id}: paths must be exact relative paths, no wildcards")
+    if set(paths) != spec["paths"]:
+        fail(f"{plan_id}: authorized changed paths differ from approved plan")
     checks = data.get("required_checks")
-    if not isinstance(checks, list) or not required_checks.issubset(set(checks)):
-        fail(f"{plan_id}: missing required backend and browser checks")
+    if not isinstance(checks, list) or len(checks) != len(set(checks)) or set(checks) != spec["checks"]:
+        fail(f"{plan_id}: exact required acceptance checks do not match approved workflow")
+    if plan_id == "P01_T07_INT_REG_02A":
+        if data.get("source_pr_number") != 67:
+            fail(f"{plan_id}: only product PR #67 is approved")
+        if data.get("approved_source_sha") != "f8b7f7b8294be52df0336d5e619f43b55450c976":
+            fail(f"{plan_id}: unexpected source SHA")
+        if data.get("source_baseline_sha") != "52809efbc077cd6abb6860d870cc487cc8eddc42":
+            fail(f"{plan_id}: unexpected frozen frontend baseline")
     if type(data.get("qa_issue_number")) is not int or data["qa_issue_number"] < 1:
         fail(f"{plan_id}: QA issue number missing")
     if data.get("test_only") is not True or data.get("independent_review_required") is not True:
