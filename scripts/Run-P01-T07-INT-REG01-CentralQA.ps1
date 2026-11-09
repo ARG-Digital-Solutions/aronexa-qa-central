@@ -34,7 +34,7 @@ if ($ProductSha -cne $approvedProductSha -or $FrontendSha -cne $approvedFrontend
     throw 'Blocked: SHA differs from P01-T07-INT-REG01 owner-reviewed pins. Separate review required.'
 }
 
-$actualSha = Invoke-Gh @('api', "repos/$appRepo/git/ref/heads/$sourceBranch", '--jq', '.object.sha')
+$actualSha = Invoke-Gh -Arguments @('api', "repos/$appRepo/git/ref/heads/$sourceBranch", '--jq', '.object.sha')
 if ($actualSha -cne $ProductSha) {
     throw "Stopped: product branch moved. Expected $ProductSha; actual $actualSha. Re-review before dispatch."
 }
@@ -42,23 +42,23 @@ if ($actualSha -cne $ProductSha) {
 # GitHub only registers workflow_dispatch workflows present on the QA default branch.
 $workflowApiPath = "repos/$qaRepo/contents/.github/workflows/" + $workflow + '?ref=main'
 try {
-    $null = Invoke-Gh @('api', $workflowApiPath, '--jq', '.path')
+    $null = Invoke-Gh -Arguments @('api', $workflowApiPath, '--jq', '.path')
 } catch {
     throw "QA Central workflow is not on main yet. Review and separately authorize QA Central PR #5 before running. $($_.Exception.Message)"
 }
 
-$priorText = Invoke-Gh @('run','list','--repo',$qaRepo,'--workflow',$workflow,
+$priorText = Invoke-Gh -Arguments @('run','list','--repo',$qaRepo,'--workflow',$workflow,
     '--event','workflow_dispatch','--limit','50','--json','databaseId')
 $prior = @($priorText | ConvertFrom-Json | ForEach-Object { $_.databaseId })
 
-Invoke-Gh @('workflow','run',$workflow,'--repo',$qaRepo,'--ref','main',
+Invoke-Gh -Arguments @('workflow','run',$workflow,'--repo',$qaRepo,'--ref','main',
     '-f',"backend_sha=$ProductSha",'-f',"frontend_sha=$FrontendSha",
     '-f','acknowledge_disposable_only=true') | Write-Host
 
 $run = $null
 for ($i = 0; $i -lt 30; $i++) {
     Start-Sleep -Seconds 3
-    $raw = Invoke-Gh @('run','list','--repo',$qaRepo,'--workflow',$workflow,
+    $raw = Invoke-Gh -Arguments @('run','list','--repo',$qaRepo,'--workflow',$workflow,
         '--event','workflow_dispatch','--limit','50',
         '--json','databaseId,headSha,createdAt,status,conclusion,url')
     $items = @($raw | ConvertFrom-Json)
@@ -74,7 +74,7 @@ Write-Host "QA Central run: $($run.url)"
 & gh run watch "$($run.databaseId)" --repo $qaRepo --exit-status
 $watchExit = $LASTEXITCODE
 
-$details = Invoke-Gh @('run','view',"$($run.databaseId)",'--repo',$qaRepo,
+$details = Invoke-Gh -Arguments @('run','view',"$($run.databaseId)",'--repo',$qaRepo,
     '--json','databaseId,status,conclusion,headSha,createdAt,updatedAt,url,jobs')
 $data = $details | ConvertFrom-Json
 
