@@ -105,12 +105,45 @@ test('R3A-04 modal title focus, Escape dismissal, opener focus restoration', asy
 
 test('R3A-05 modal traps keyboard Tab focus', async ({ page }) => {
   const dialog = await openReview(page);
-  for (let index = 0; index < 5; index++) {
-    await page.keyboard.press('Tab');
-    expect(await page.evaluate(() =>
-      !!document.querySelector('dialog')?.contains(document.activeElement)
-    )).toBe(true);
+  // Native Chromium dialogs can briefly put keyboard focus in browser chrome:
+  // document.activeElement becomes BODY *while document.hasFocus() is false*.
+  // This is not evidence that a background application control received focus.
+  // Preserve the actual accessibility requirement: while the document is focused,
+  // keyboard focus stays in the native modal, never behind it.
+  const steps = [];
+  for (const key of ['Tab', 'Shift+Tab']) {
+    for (let index = 0; index < 10; index++) {
+      await page.keyboard.press(key);
+      const state = await page.evaluate(() => {
+        const modal = document.querySelector('dialog');
+        const active = document.activeElement;
+        const inside = Boolean(modal?.contains(active));
+        return {
+          tag: active?.tagName ?? 'null',
+          id: active?.id ?? '',
+          inside,
+          documentFocused: document.hasFocus(),
+          body: active === document.body,
+          dialogOpen: Boolean(modal?.open),
+          nativeModal: Boolean(modal?.matches(':modal')),
+          backgroundInteractive: Boolean(!inside && active?.matches?.(
+            'button,a[href],input,select,textarea,[tabindex]:not([tabindex="-1"])'
+          )),
+        };
+      });
+      steps.push({ key, index, ...state });
+      expect(state.dialogOpen, key + ' must not close review dialog').toBe(true);
+      expect(state.nativeModal, key + ' must preserve native dialog modal state').toBe(true);
+      expect(state.backgroundInteractive, key + ' must not focus a background control').toBe(false);
+      if (state.documentFocused) {
+        expect(state.inside, key + ' with document focus must stay inside dialog').toBe(true);
+      } else {
+        expect(state.body, key + ' out-of-document transition must report BODY').toBe(true);
+      }
+    }
   }
+  expect(steps.some(step => step.key === 'Tab' && step.inside)).toBe(true);
+  expect(steps.some(step => step.key === 'Shift+Tab' && step.inside)).toBe(true);
   await expect(dialog).toBeVisible();
 });
 
