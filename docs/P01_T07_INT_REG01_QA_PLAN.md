@@ -58,3 +58,16 @@ A run is eligible for **QA review only** if the backend and frontend jobs each c
 ## Follow-up after an actual run
 
 Update this report or a new dated evidence file under `evidence/int-reg01/` with exact GitHub Actions run URL, app SHA, QA SHA, test counts, failed/skipped cases, independent reviewer, and PASS/FAIL/BLOCKED disposition. Leave archived evidence files unchanged.
+
+
+## Central QA PowerShell launcher (after workflow review and merge)
+
+The original local `run_p01_t07_int_reg01_ci.ps1` targets the **product** repository's `pr-quality.yml` and is not the central execution path. The reviewed QA Central equivalent is `scripts/Run-P01-T07-INT-REG01-CentralQA.ps1`. It validates the pinned product branch head and frontend SHA, verifies the QA workflow exists on `main`, triggers `qa-int-reg01.yml`, watches its jobs and emits local `artifacts/int-reg01/P01_T07_INT_REG01_QA_EVIDENCE.json` in a QA Central checkout. It uses GitHub CLI and no local database or local Maven/Docker.
+
+```powershell
+Set-Location 'C:\Users\ganes\Application Development\AroNexa-QA-Central'
+git pull origin main
+& .\scripts\Run-P01-T07-INT-REG01-CentralQA.ps1
+```
+
+**Only run after QA PR #5 has been independently reviewed and authorized for merge to main.** Never treat the generated JSON summary as a substitute for logs, JUnit, Playwright reports or independent security review. PowerShell launcher execution has **not** yet been validated in Windows.
