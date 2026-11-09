@@ -11,3 +11,12 @@
 8. Shared file conflicts are adjudicated by designated integrator; no parallel agent edits same paths and no automatic merge without owner review.
 
 **Current INT-R1 baseline:** app `52809efbc077cd6abb6860d870cc487cc8eddc42` (PR #61 DRAFT), Reception PR #36 DRAFT. W3-E original migration HOLD remains.
+
+
+## Canonical future QA routing (owner instruction, 2026-11-09)
+
+- **Use this QA repository for every new QA task, defect-evidence tracking, test suite, independent review and CI orchestration.** Do not create parallel active QA automation repositories or duplicate stale suites.
+- Product-source JUnit/Testcontainers/Node tests remain collocated with implementation when they need to compile with the application; QA Central owns run execution and historical acceptance evidence across exact product and QA commit SHAs.
+- Record requirements-to-tests, failures/skips, sanitized artifacts and reviewer sign-off centrally. Do not copy PHI or credentials or convert archived test counts into current evidence.
+- Manual backend contract workflow proposal: `.github/workflows/qa-int-reg01.yml`, authorized P01-T07-INT-REG-01 only. Fresh disposable PostgreSQL; no original database, deployment or merge authority.
+- See `docs/CENTRAL_QA_OPERATING_MODEL.md` for responsibilities and release holds.
