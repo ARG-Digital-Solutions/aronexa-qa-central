@@ -1,0 +1,29 @@
+name: Validate Central QA Plans and Workflows
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-central-qa:
+    name: Validate reviewed plan schema and workflow syntax
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Reject incomplete or unsafe QA plan declarations
+        run: python3 scripts/check_qa_plans.py
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+      - name: Statically lint QA workflows without secrets
+        run: |
+          go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -shellcheck= \
+            .github/workflows/qa-cross-repo-handoff.yml \
+            .github/workflows/qa-int-reg01.yml \
+            .github/workflows/qa-handoff-lint.yml

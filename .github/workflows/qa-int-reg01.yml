@@ -1,10 +1,15 @@
 name: AroNexa P01-T07 INT-REG01 Independent QA
+run-name: "INT-REG01 ${{ inputs.request_id || 'manual' }} / ${{ inputs.backend_sha }}"
 
 # This controlled QA workflow can be started only by a maintainer on the
 # default branch after review. Never uses original Windows/production databases.
 on:
   workflow_dispatch:
     inputs:
+      request_id:
+        description: 'Cross-repository handoff identifier for audit correlation'
+        required: false
+        type: string
       backend_sha:
         description: "Exact 40-character approved backend/PR #64 head SHA"
         required: true

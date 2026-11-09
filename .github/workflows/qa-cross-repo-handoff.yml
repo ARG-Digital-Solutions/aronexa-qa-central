@@ -1,0 +1,230 @@
+name: AroNexa Central QA - Cross Repository Handoff
+run-name: "Central QA ${{ github.event.client_payload.plan_id }} PR ${{ github.event.client_payload.pr_number }}"
+
+on:
+  repository_dispatch:
+    types: [aronexa-qa-request]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: central-handoff-${{ github.event.client_payload.source_repository }}-${{ github.event.client_payload.pr_number }}-${{ github.event.client_payload.app_sha }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate approved QA plan and source PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    outputs:
+      app_sha: ${{ steps.plan.outputs.app_sha }}
+      pr_number: ${{ steps.plan.outputs.pr_number }}
+      plan_id: ${{ steps.plan.outputs.plan_id }}
+      request_key: ${{ steps.plan.outputs.request_key }}
+      frontend_sha: ${{ steps.plan.outputs.frontend_sha }}
+      workflow: ${{ steps.plan.outputs.workflow }}
+      qa_issue: ${{ steps.plan.outputs.qa_issue }}
+      app_repo: ${{ steps.plan.outputs.app_repo }}
+    steps:
+      - name: Checkout reviewed QA plans, not application code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate exact app PR, plan label and source ownership
+        id: plan
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          SOURCE_REPO: ${{ github.event.client_payload.source_repository }}
+          PR_NUMBER: ${{ github.event.client_payload.pr_number }}
+          APP_SHA: ${{ github.event.client_payload.app_sha }}
+          PLAN_ID: ${{ github.event.client_payload.plan_id }}
+          REQUEST_KEY: ${{ github.event.client_payload.request_key }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN" || { echo "Missing read-only source repository token" >&2; exit 1; }
+          test "$SOURCE_REPO" = 'ARG-Digital-Solutions/aronexa-healthcare-platform'
+          [[ "$PR_NUMBER" =~ ^[1-9][0-9]*$ ]]
+          [[ "$APP_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$PLAN_ID" =~ ^[A-Z][A-Z0-9_]{5,60}$ ]]
+          [[ "$REQUEST_KEY" =~ ^[0-9]+-[0-9]+$ ]]
+          PLAN_PATH="qa/plans/$PLAN_ID.json"
+          test -f "$PLAN_PATH" || { echo "Missing reviewed plan: $PLAN_PATH" >&2; exit 1; }
+          jq -e --arg id "$PLAN_ID" --arg repo "$SOURCE_REPO" '
+            .plan_id == $id and
+            .source_repository == $repo and
+            .qa_workflow == "qa-int-reg01.yml" and
+            .test_only == true and
+            .independent_review_required == true and
+            .customer_release_allowed_on_ci_pass == false and
+            (.source_baseline_sha | test("^[0-9a-f]{40}$")) and
+            (.frozen_frontend_sha | test("^[0-9a-f]{40}$")) and
+            (.qa_issue_number | type == "number") and
+            (.authorized_changed_paths | length == 4) and
+            (.required_checks | index("maven_verify_and_testcontainers") != null) and
+            (.required_checks | index("verified_playwright") != null)
+          ' "$PLAN_PATH" > /dev/null
+          gh api "repos/$SOURCE_REPO/pulls/$PR_NUMBER" > /tmp/aronexa_source_pr.json
+          BASE_BRANCH=$(jq -r '.source_base_branch' "$PLAN_PATH")
+          jq -e --arg sha "$APP_SHA" --arg repo "$SOURCE_REPO" --arg base "$BASE_BRANCH" --arg label "qa-plan:$PLAN_ID" '
+            .state == "open" and
+            .head.sha == $sha and
+            .head.repo.full_name == $repo and
+            .base.ref == $base and
+            any(.labels[]?; .name == $label)
+          ' /tmp/aronexa_source_pr.json > /dev/null
+          echo "app_sha=$APP_SHA" >> "$GITHUB_OUTPUT"
+          echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
+          echo "plan_id=$PLAN_ID" >> "$GITHUB_OUTPUT"
+          echo "request_key=$REQUEST_KEY" >> "$GITHUB_OUTPUT"
+          echo "app_repo=$SOURCE_REPO" >> "$GITHUB_OUTPUT"
+          echo "frontend_sha=$(jq -r '.frozen_frontend_sha' "$PLAN_PATH")" >> "$GITHUB_OUTPUT"
+          echo "workflow=$(jq -r '.qa_workflow' "$PLAN_PATH")" >> "$GITHUB_OUTPUT"
+          echo "qa_issue=$(jq -r '.qa_issue_number' "$PLAN_PATH")" >> "$GITHUB_OUTPUT"
+          echo "QA Central plan validated at $GITHUB_SHA; exact source PR and label verified"
+
+  execute:
+    name: Dispatch approved QA suite and await actual test outcome
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 42
+    permissions:
+      contents: read
+      actions: write
+    outputs:
+      result: ${{ steps.monitor.outputs.result }}
+      test_run_url: ${{ steps.monitor.outputs.test_run_url }}
+      test_run_id: ${{ steps.monitor.outputs.test_run_id }}
+    steps:
+      - name: Dispatch known test workflow on QA Central main
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLAN_WORKFLOW: ${{ needs.validate.outputs.workflow }}
+          APP_SHA: ${{ needs.validate.outputs.app_sha }}
+          FRONTEND_SHA: ${{ needs.validate.outputs.frontend_sha }}
+          REQUEST_KEY: ${{ needs.validate.outputs.request_key }}
+        run: |
+          set -euo pipefail
+          test "$PLAN_WORKFLOW" = "qa-int-reg01.yml"
+          gh workflow run "$PLAN_WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref main \
+            -f "backend_sha=$APP_SHA" \
+            -f "frontend_sha=$FRONTEND_SHA" \
+            -f "acknowledge_disposable_only=true" \
+            -f "request_id=$REQUEST_KEY"
+      - name: Locate the correlated run and inspect all test jobs
+        id: monitor
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PLAN_WORKFLOW: ${{ needs.validate.outputs.workflow }}
+          REQUEST_KEY: ${{ needs.validate.outputs.request_key }}
+        run: |
+          set -euo pipefail
+          RID=""
+          for attempt in $(seq 1 45); do
+            RUN_LIST=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$PLAN_WORKFLOW" \
+              --event workflow_dispatch --limit 100 --json databaseId,displayTitle,createdAt)
+            RID=$(jq -r --arg k "$REQUEST_KEY" \
+              '[.[] | select(.displayTitle | contains($k))] | sort_by(.databaseId) | last | .databaseId // empty' \
+              <<< "$RUN_LIST")
+            test -n "$RID" && break
+            sleep 3
+          done
+          if test -z "$RID"; then
+            echo "Correlated QA workflow missing; fail closed" >&2
+            echo "result=failure" >> "$GITHUB_OUTPUT"
+            echo "test_run_url=https://github.com/$GITHUB_REPOSITORY/actions" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "test_run_id=$RID" >> "$GITHUB_OUTPUT"
+          echo "test_run_url=https://github.com/$GITHUB_REPOSITORY/actions/runs/$RID" >> "$GITHUB_OUTPUT"
+          set +e
+          gh run watch "$RID" --repo "$GITHUB_REPOSITORY" --exit-status
+          WATCH_EXIT=$?
+          set -e
+          RESULT_JSON=$(gh run view "$RID" --repo "$GITHUB_REPOSITORY" \
+            --json conclusion,status,jobs,headSha,url)
+          echo "$RESULT_JSON" | jq -c '{status,conclusion,jobs:[.jobs[]|{name,conclusion}]}'
+          if test "$WATCH_EXIT" -eq 0 && jq -e '
+            .status == "completed" and .conclusion == "success" and
+            ([.jobs[] | select(.conclusion != "success")] | length == 0) and
+            ([.jobs[] | select(.name | contains("Backend full regression"))] | length == 1) and
+            ([.jobs[] | select(.name | contains("Independent frozen"))] | length == 1)
+          ' <<< "$RESULT_JSON" > /dev/null; then
+            echo "result=success" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=failure" >> "$GITHUB_OUTPUT"
+          fi
+
+  report:
+    name: Post tamper-resistant PR status and QA evidence receipt
+    if: always() && needs.validate.result == 'success'
+    needs: [validate, execute]
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Verify current PR before writing any status
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          SOURCE_REPO: ${{ needs.validate.outputs.app_repo }}
+          PR_NUMBER: ${{ needs.validate.outputs.pr_number }}
+          APP_SHA: ${{ needs.validate.outputs.app_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN"
+          PR_HEAD=$(gh api "repos/$SOURCE_REPO/pulls/$PR_NUMBER" --jq '.head.sha')
+          test "$PR_HEAD" = "$APP_SHA" || { echo "Stale PR: do not post a green status" >&2; exit 1; }
+      - name: Publish exact-request acceptance status to development commit
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.ARONEXA_DEV_STATUS_TOKEN }}
+          APP_REPO: ${{ needs.validate.outputs.app_repo }}
+          APP_SHA: ${{ needs.validate.outputs.app_sha }}
+          PLAN_ID: ${{ needs.validate.outputs.plan_id }}
+          REQUEST_KEY: ${{ needs.validate.outputs.request_key }}
+          RESULT: ${{ needs.execute.outputs.result }}
+          EXECUTE_JOB_RESULT: ${{ needs.execute.result }}
+          RUN_URL: ${{ needs.execute.outputs.test_run_url }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN" || { echo "Missing status-write credential" >&2; exit 1; }
+          STATE="failure"
+          if test "$EXECUTE_JOB_RESULT" = "success" && test "$RESULT" = "success"; then
+            STATE="success"
+          fi
+          test -n "$RUN_URL" || RUN_URL="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          CONTEXT="aronexa/central-qa/$PLAN_ID"
+          DESCRIPTION="request=$REQUEST_KEY; qa=$STATE; release-not-authorized"
+          gh api "repos/$APP_REPO/statuses/$APP_SHA" --method POST \
+            -f "state=$STATE" -f "context=$CONTEXT" -f "description=$DESCRIPTION" \
+            -f "target_url=$RUN_URL" --silent
+          echo "Central QA $STATE status posted for $APP_SHA, context $CONTEXT"
+      - name: Preserve result in QA Central issue
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE: ${{ needs.validate.outputs.qa_issue }}
+          APP_SHA: ${{ needs.validate.outputs.app_sha }}
+          PR_NUMBER: ${{ needs.validate.outputs.pr_number }}
+          PLAN_ID: ${{ needs.validate.outputs.plan_id }}
+          REQUEST_KEY: ${{ needs.validate.outputs.request_key }}
+          RESULT: ${{ needs.execute.outputs.result }}
+          EXECUTE_JOB_RESULT: ${{ needs.execute.result }}
+          RUN_URL: ${{ needs.execute.outputs.test_run_url }}
+        run: |
+          set -euo pipefail
+          STATE="FAIL"
+          if test "$EXECUTE_JOB_RESULT" = "success" && test "$RESULT" = "success"; then STATE="PASS"; fi
+          test -n "$RUN_URL" || RUN_URL="https://github.com/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          BODY="Automated cross-repo QA: **$STATE** | plan \`$PLAN_ID\` | product PR #$PR_NUMBER | SHA \`$APP_SHA\` | request \`$REQUEST_KEY\` | [test execution]($RUN_URL). Synthetic/test-only evidence; independent review and release authorization remain separate."
+          gh api "repos/$GITHUB_REPOSITORY/issues/$ISSUE/comments" --method POST -f "body=$BODY" --silent
+          echo "## QA handoff: $STATE" >> "$GITHUB_STEP_SUMMARY"
+          echo "Test run: $RUN_URL" >> "$GITHUB_STEP_SUMMARY"
+          echo "Exact app SHA: $APP_SHA" >> "$GITHUB_STEP_SUMMARY"
+          if test "$STATE" != "PASS"; then exit 1; fi
