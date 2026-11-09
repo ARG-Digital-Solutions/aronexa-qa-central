@@ -123,6 +123,7 @@ jobs:
       test_run_id: ${{ steps.monitor.outputs.test_run_id }}
     steps:
       - name: Dispatch known test workflow on QA Central main
+        id: dispatch
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -132,6 +133,8 @@ jobs:
           REQUEST_KEY: ${{ needs.validate.outputs.request_key }}
         run: |
           set -euo pipefail
+          # Record the launch boundary before dispatch. A past green child is not reusable.
+          echo "dispatched_at=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" >> "$GITHUB_OUTPUT"
           case "$PLAN_WORKFLOW" in
             qa-int-reg01.yml)
               gh workflow run "$PLAN_WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref main \
@@ -158,14 +161,17 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PLAN_WORKFLOW: ${{ needs.validate.outputs.workflow }}
           REQUEST_KEY: ${{ needs.validate.outputs.request_key }}
+          APP_SHA: ${{ needs.validate.outputs.app_sha }}
+          DISPATCHED_AT: ${{ steps.dispatch.outputs.dispatched_at }}
         run: |
           set -euo pipefail
+          test -n "$DISPATCHED_AT" || { echo "Missing dispatch timestamp" >&2; exit 1; }
           RID=""
           for attempt in $(seq 1 45); do
             RUN_LIST=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "$PLAN_WORKFLOW" \
-              --event workflow_dispatch --limit 100 --json databaseId,displayTitle,createdAt)
-            RID=$(jq -r --arg k "$REQUEST_KEY" \
-              '[.[] | select(.displayTitle | contains($k))] | sort_by(.databaseId) | last | .databaseId // empty' \
+              --event workflow_dispatch --limit 100 --json databaseId,displayTitle,createdAt,headBranch)
+            RID=$(jq -r --arg k "$REQUEST_KEY" --arg sha "$APP_SHA" --arg after "$DISPATCHED_AT" \
+              '[.[] | select(.headBranch == "main") | select(.createdAt >= $after) | select(.displayTitle | endswith(" " + $k + " / " + $sha))] | sort_by(.databaseId) | last | .databaseId // empty' \
               <<< "$RUN_LIST")
             test -n "$RID" && break
             sleep 3
