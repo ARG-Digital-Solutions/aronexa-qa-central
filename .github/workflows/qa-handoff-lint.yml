@@ -26,4 +26,5 @@ jobs:
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -shellcheck= \
             .github/workflows/qa-cross-repo-handoff.yml \
             .github/workflows/qa-int-reg01.yml \
+            .github/workflows/qa-int-reg02a.yml \
             .github/workflows/qa-handoff-lint.yml
