@@ -1,0 +1,28 @@
+{
+  "plan_id": "P01_T07_INT_REG_02A",
+  "task_id": "P01-T07-INT-REG-02A",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "source_pr_number": 67,
+  "source_base_branch": "feature/p01-t07-appointments-demo-20261108",
+  "source_baseline_sha": "52809efbc077cd6abb6860d870cc487cc8eddc42",
+  "approved_source_sha": "f8b7f7b8294be52df0336d5e619f43b55450c976",
+  "qa_workflow": "qa-int-reg02a.yml",
+  "qa_issue_number": 10,
+  "frozen_frontend_sha": "52809efbc077cd6abb6860d870cc487cc8eddc42",
+  "authorized_changed_paths": [
+    "frontend/src/registrationContractPreview.ts",
+    "frontend/test/registration-contract-preview.test.mjs",
+    "docs/phases/P01_T07_INT_REG02A_SYNTHETIC_SEAM.md"
+  ],
+  "required_checks": [
+    "source_scope_and_disposable_guard",
+    "frontend_build",
+    "frontend_model_regression",
+    "contract_preview_tests",
+    "verified_playwright"
+  ],
+  "test_only": true,
+  "independent_review_required": true,
+  "customer_release_allowed_on_ci_pass": false,
+  "notes": "Manual, review-only independent frontend QA. No cross-repo automatic handoff activation until privileged controller is separately reviewed and approved. No app source modification, production backend, original Windows database, real patient data, merge, deployment or release."
+}
