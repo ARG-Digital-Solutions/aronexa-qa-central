@@ -54,17 +54,42 @@ jobs:
           jq -e --arg id "$PLAN_ID" --arg repo "$SOURCE_REPO" '
             .plan_id == $id and
             .source_repository == $repo and
-            .qa_workflow == "qa-int-reg01.yml" and
             .test_only == true and
             .independent_review_required == true and
             .customer_release_allowed_on_ci_pass == false and
             (.source_baseline_sha | test("^[0-9a-f]{40}$")) and
             (.frozen_frontend_sha | test("^[0-9a-f]{40}$")) and
-            (.qa_issue_number | type == "number") and
-            (.authorized_changed_paths | length == 4) and
-            (.required_checks | index("maven_verify_and_testcontainers") != null) and
-            (.required_checks | index("verified_playwright") != null)
+            (.qa_issue_number | type == "number")
           ' "$PLAN_PATH" > /dev/null
+          # Explicit reviewed dispatch table: arbitrary repository labels cannot run arbitrary workflows.
+          case "$PLAN_ID" in
+            P01_T07_INT_REG_01)
+              jq -e '
+                .qa_workflow == "qa-int-reg01.yml" and
+                (.authorized_changed_paths | length == 4) and
+                (.required_checks | index("maven_verify_and_testcontainers") != null) and
+                (.required_checks | index("verified_playwright") != null)
+              ' "$PLAN_PATH" > /dev/null
+              ;;
+            P01_T07_INT_REG_02A)
+              test "$PR_NUMBER" = "67"
+              jq -e --arg sha "$APP_SHA" '
+                .qa_workflow == "qa-int-reg02a.yml" and
+                .source_pr_number == 67 and
+                .approved_source_sha == $sha and
+                .source_baseline_sha == "52809efbc077cd6abb6860d870cc487cc8eddc42" and
+                .frozen_frontend_sha == "52809efbc077cd6abb6860d870cc487cc8eddc42" and
+                (.authorized_changed_paths | length == 3) and
+                (.required_checks | index("contract_preview_tests") != null) and
+                (.required_checks | index("frontend_model_regression") != null) and
+                (.required_checks | index("verified_playwright") != null)
+              ' "$PLAN_PATH" > /dev/null
+              ;;
+            *)
+              echo "No reviewed dispatch route for plan $PLAN_ID" >&2
+              exit 1
+              ;;
+          esac
           gh api "repos/$SOURCE_REPO/pulls/$PR_NUMBER" > /tmp/aronexa_source_pr.json
           BASE_BRANCH=$(jq -r '.source_base_branch' "$PLAN_PATH")
           jq -e --arg sha "$APP_SHA" --arg repo "$SOURCE_REPO" --arg base "$BASE_BRANCH" --arg label "qa-plan:$PLAN_ID" '
@@ -107,12 +132,25 @@ jobs:
           REQUEST_KEY: ${{ needs.validate.outputs.request_key }}
         run: |
           set -euo pipefail
-          test "$PLAN_WORKFLOW" = "qa-int-reg01.yml"
-          gh workflow run "$PLAN_WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref main \
-            -f "backend_sha=$APP_SHA" \
-            -f "frontend_sha=$FRONTEND_SHA" \
-            -f "acknowledge_disposable_only=true" \
-            -f "request_id=$REQUEST_KEY"
+          case "$PLAN_WORKFLOW" in
+            qa-int-reg01.yml)
+              gh workflow run "$PLAN_WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref main \
+                -f "backend_sha=$APP_SHA" \
+                -f "frontend_sha=$FRONTEND_SHA" \
+                -f "acknowledge_disposable_only=true" \
+                -f "request_id=$REQUEST_KEY"
+              ;;
+            qa-int-reg02a.yml)
+              gh workflow run "$PLAN_WORKFLOW" --repo "$GITHUB_REPOSITORY" --ref main \
+                -f "app_sha=$APP_SHA" \
+                -f "acknowledge_disposable_only=true" \
+                -f "request_id=$REQUEST_KEY"
+              ;;
+            *)
+              echo "Unreviewed workflow attempted: $PLAN_WORKFLOW" >&2
+              exit 1
+              ;;
+          esac
       - name: Locate the correlated run and inspect all test jobs
         id: monitor
         shell: bash
@@ -147,11 +185,16 @@ jobs:
           RESULT_JSON=$(gh run view "$RID" --repo "$GITHUB_REPOSITORY" \
             --json conclusion,status,jobs,headSha,url)
           echo "$RESULT_JSON" | jq -c '{status,conclusion,jobs:[.jobs[]|{name,conclusion}]}'
-          if test "$WATCH_EXIT" -eq 0 && jq -e '
+          if test "$WATCH_EXIT" -eq 0 && jq -e --arg workflow "$PLAN_WORKFLOW" '
             .status == "completed" and .conclusion == "success" and
             ([.jobs[] | select(.conclusion != "success")] | length == 0) and
-            ([.jobs[] | select(.name | contains("Backend full regression"))] | length == 1) and
-            ([.jobs[] | select(.name | contains("Independent frozen"))] | length == 1)
+            (if $workflow == "qa-int-reg01.yml" then
+              ([.jobs[] | select(.name | contains("Backend full regression"))] | length == 1) and
+              ([.jobs[] | select(.name | contains("Independent frozen"))] | length == 1)
+             elif $workflow == "qa-int-reg02a.yml" then
+              ([.jobs[] | select(.name | contains("Check reviewed plan and exact synthetic PR source"))] | length == 1) and
+              ([.jobs[] | select(.name | contains("Pinned frontend build, contract, model and Playwright QA"))] | length == 1)
+             else false end)
           ' <<< "$RESULT_JSON" > /dev/null; then
             echo "result=success" >> "$GITHUB_OUTPUT"
           else
