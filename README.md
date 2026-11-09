@@ -2,6 +2,15 @@
 
 **Single private, independent, Git-ready QA repository** for AroNexa. Keeps the previously authored Playwright suites while introducing verified, controlled tests for integrated Reception + Appointments synthetic frontend. This archive is intentionally **not** the AroNexa development repository.
 
+## Canonical QA ownership (owner decision, 2026-11-09)
+
+This is the **default repository for all future AroNexa QA work**: QA requirements/issues, independent test suites, CI orchestration, regression, security checks, accessibility evidence, screenshots/artifacts and QA sign-off recommendations. Product source-coupled tests (JUnit/Testcontainers, frontend model tests) stay in the application repository so they compile and version with the implementation, but QA Central controls their independent execution and acceptance evidence.
+
+See [Central QA operating model](docs/CENTRAL_QA_OPERATING_MODEL.md) and [P01-T07-INT-REG-01 test plan](docs/P01_T07_INT_REG01_QA_PLAN.md).
+
+**New (review pending):** `.github/workflows/qa-int-reg01.yml` runs authorized P01-T07-INT-REG-01 backend Maven regression in a disposable PostgreSQL/Testcontainers environment and the frozen PR #61 frontend/browser baseline separately. The workflow is *manual* with exact SHA and disposable-only acknowledgement; it will not be active until the QA PR is reviewed and merged to the QA repository default branch. No AroNexa development PR is merged by this setup.
+
+
 ## Scope and safeguards
 - **Synthetic-only / localhost-only** browser testing. No live patient or PHI, no backend startup, no Flyway, no original Windows DB or production URLs.
 - Keep earlier tests in `legacy/` **unchanged** for historical traceability. Existing legacy selectors may be stale; do not treat their failures as app bugs without reconciling source.
@@ -52,3 +61,8 @@ If the organization disallows member repo creation, ask an org owner to create a
 4. Keep acceptance evidence linked to **exact app SHA + QA SHA**, JUnit outcome, browser project, and timestamp. No merge or release authorization is implied by green QA.
 
 See `docs/ARCHIVE_AUDIT.md`, `docs/TEST_INVENTORY.md` and `docs/TEST_GOVERNANCE.md`.
+
+
+### Secure registration INT-REG01 (pending QA workflow review)
+
+To keep all new QA tasks centralized, use `scripts/Run-P01-T07-INT-REG01-CentralQA.ps1` **after** the reviewed `qa-int-reg01.yml` workflow lands on QA Central `main`. The older `run_p01_t07_int_reg01_ci.ps1` is product-repository-oriented and should not be the ongoing central QA entrypoint. See [the INT-REG01 plan](docs/P01_T07_INT_REG01_QA_PLAN.md). The launcher triggers GitHub Actions and records evidence in local `artifacts/int-reg01/`; it does not run Docker or migrate any local database.

@@ -28,3 +28,14 @@
 - Add new reviewed `*.spec.mjs` files under `tests/verified/` using `@playwright/test` and local synthetic app selectors; use descriptive test names and explicit fail-closed assertions.
 - Tests which connect to backend/database must be placed in a **separate gated workflow** and require disposable DB approval. Never add a production URL or shared DB credential to browser CI.
 - Existing test names/IDs should be reused rather than duplicated; identify feature + requirement ID and update this inventory.
+
+
+## P01-T07-INT-REG-01 (proposed QA Central increment)
+
+| Suite | Implementation location | QA orchestrator | Gate |
+|---|---|---|---|
+| Versioned API contract, idempotency, duplicate prevention | Product PR #64, `SyntheticRegistrationFrontendContractTests.java` and JSON fixture | `qa-int-reg01.yml` backend-disposable | NOT_RUN |
+| C2 PostgreSQL RLS, security, session, concurrency | Existing source-coupled C2 backend tests | `qa-int-reg01.yml` backend-disposable | NOT_RUN |
+| Frozen Reception + Appointments frontend model/browser | Product PR #61 plus `tests/verified/` here | `qa-int-reg01.yml` frozen-frontend | NOT_RUN |
+
+All current evidence must be produced on **exact** source SHAs and attached to QA Central run records. This planned workflow is only active after reviewed merge to QA Central `main`; historical evidence is not refreshed automatically. Reference: `docs/P01_T07_INT_REG01_QA_PLAN.md`.

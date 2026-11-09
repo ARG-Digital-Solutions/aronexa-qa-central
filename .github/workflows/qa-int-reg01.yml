@@ -1,0 +1,214 @@
+name: AroNexa P01-T07 INT-REG01 Independent QA
+
+# This controlled QA workflow can be started only by a maintainer on the
+# default branch after review. Never uses original Windows/production databases.
+on:
+  workflow_dispatch:
+    inputs:
+      backend_sha:
+        description: "Exact 40-character approved backend/PR #64 head SHA"
+        required: true
+        type: string
+        default: "8788b89ddceb70c085818939a82c3476887006bd"
+      frontend_sha:
+        description: "Frozen read-only PR #61 SHA"
+        required: true
+        type: string
+        default: "52809efbc077cd6abb6860d870cc487cc8eddc42"
+      acknowledge_disposable_only:
+        description: "I authorize synthetic test data and fresh Testcontainers only"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: int-reg01-${{ inputs.backend_sha }}
+  cancel-in-progress: false
+
+jobs:
+  guard:
+    name: Check approved source pins and disposable-only gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate explicit authorization and SHA format
+        env:
+          BACKEND_SHA: ${{ inputs.backend_sha }}
+          FRONTEND_SHA: ${{ inputs.frontend_sha }}
+          ACK: ${{ inputs.acknowledge_disposable_only }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$ACK" = "true" || { echo "Disposable-only acknowledgement is required" >&2; exit 1; }
+          [[ "$BACKEND_SHA" =~ ^[0-9a-f]{40}$ ]] || { echo "Backend must be an exact commit SHA" >&2; exit 1; }
+          test "$FRONTEND_SHA" = "52809efbc077cd6abb6860d870cc487cc8eddc42" || {
+            echo "Frozen frontend is not the authorized reference" >&2; exit 1;
+          }
+          echo "Source pins and test-only acknowledgement accepted; not a release approval"
+
+  backend-disposable:
+    name: Backend full regression + disposable PostgreSQL
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Require separate read-only access to private source
+        env:
+          SOURCE_READ_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+        run: |
+          test -n "$SOURCE_READ_TOKEN" || { echo 'Missing read-only ARONEXA_SOURCE_READ_TOKEN' >&2; exit 1; }
+      - name: Checkout reviewed QA repository
+        uses: actions/checkout@v4
+        with:
+          path: qa
+          persist-credentials: false
+      - name: Checkout exact approved backend SHA
+        uses: actions/checkout@v4
+        with:
+          repository: ARG-Digital-Solutions/aronexa-healthcare-platform
+          ref: ${{ inputs.backend_sha }}
+          token: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          fetch-depth: 0
+          path: app
+          persist-credentials: false
+      - name: Verify source SHA and PR #64 four-file scope
+        working-directory: app
+        env:
+          EXPECTED_SHA: ${{ inputs.backend_sha }}
+          BASE_SHA: cfdb03c631c2ed6df687b71d68fcc890a1eb9cc4
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          test "$(git merge-base "$BASE_SHA" HEAD)" = "$BASE_SHA"
+          mapfile -t changed < <(git diff --name-only "$BASE_SHA" HEAD)
+          test "${#changed[@]}" -eq 4 || { echo "Unexpected number of source changes" >&2; exit 1; }
+          for file in "${changed[@]}"; do
+            case "$file" in
+              backend/src/test/java/com/argdigital/aronexa/patient/SyntheticRegistrationFrontendContractTests.java|backend/src/test/resources/contracts/p01-t07-int-reg01-registration-v1.json|docs/phases/P01_T07_INT_REG01_CONTRACT_AND_GAPS.md|docs/phases/P01_T07_INT_REG01_BUILD_LOG.md) ;;
+              *) echo "Out-of-scope changed file detected: $file" >&2; exit 1 ;;
+            esac
+          done
+          python3 -m json.tool backend/src/test/resources/contracts/p01-t07-int-reg01-registration-v1.json >/dev/null
+          echo "Validated exact approved baseline, four-file scope, and JSON contract"
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: app/backend/pom.xml
+      - name: Check Docker for fresh Testcontainers
+        run: docker info
+      - name: Run source policy and secret checks
+        working-directory: app
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/ci/check_docs.py
+          python3 scripts/ci/check_secrets.py
+          git diff --name-only cfdb03c631c2ed6df687b71d68fcc890a1eb9cc4 HEAD > /tmp/int-reg01-files.txt
+          python3 scripts/ci/check_scope.py /tmp/int-reg01-files.txt
+      - name: Execute complete Maven verify on disposable environment
+        working-directory: app
+        run: mvn -B -f backend/pom.xml verify
+      - name: Record backend execution identity
+        if: always()
+        env:
+          BACKEND_SHA: ${{ inputs.backend_sha }}
+        shell: bash
+        run: |
+          mkdir -p qa/artifacts/int-reg01
+          python3 - <<'PY'
+          import json,os,datetime,pathlib
+          record={
+            "task":"P01-T07-INT-REG-01",
+            "application_sha":os.getenv("BACKEND_SHA"),
+            "qa_workflow_sha":os.getenv("GITHUB_SHA"),
+            "run_id":os.getenv("GITHUB_RUN_ID"),
+            "run_attempt":os.getenv("GITHUB_RUN_ATTEMPT"),
+            "executed_at_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "release_approved":False,
+            "test_outcome":"SEE_GITHUB_JOB_CONCLUSION_AND_JUNIT_REPORTS"
+          }
+          pathlib.Path("qa/artifacts/int-reg01/backend-provenance.json").write_text(json.dumps(record,indent=2)+"\n")
+          PY
+      - name: Upload backend JUnit and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: int-reg01-backend-${{ github.run_id }}
+          path: |
+            app/backend/target/surefire-reports/
+            app/backend/target/failsafe-reports/
+            qa/artifacts/int-reg01/
+          if-no-files-found: warn
+          retention-days: 14
+
+  frozen-frontend:
+    name: Independent frozen Reception/Appointment baseline
+    needs: guard
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout independent QA suite
+        uses: actions/checkout@v4
+        with:
+          path: qa
+          persist-credentials: false
+      - name: Checkout frozen PR #61 by exact SHA
+        uses: actions/checkout@v4
+        with:
+          repository: ARG-Digital-Solutions/aronexa-healthcare-platform
+          ref: ${{ inputs.frontend_sha }}
+          token: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          path: app
+          persist-credentials: false
+      - name: Verify frozen frontend revision
+        working-directory: app
+        env:
+          EXPECTED_SHA: ${{ inputs.frontend_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          echo "Frozen frontend SHA verified; this job never connects to backend or patient DB"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: qa/package-lock.json
+      - name: Build frozen UI and execute model tests
+        working-directory: app/frontend
+        run: |
+          npm ci --no-audit --no-fund
+          npm run build
+          node --experimental-strip-types --test test/appointment-demo.test.mjs
+      - name: Install independent browser QA
+        working-directory: qa
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Run verified Playwright on isolated localhost
+        shell: bash
+        env:
+          ARONEXA_BASE_URL: http://127.0.0.1:5175/
+        run: |
+          set -euo pipefail
+          (cd app/frontend && npm run dev -- --host 127.0.0.1 --port 5175 --strictPort) >/tmp/int-reg01-vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for i in {1..30}; do
+            if curl --silent --fail "$ARONEXA_BASE_URL" >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail "$ARONEXA_BASE_URL" >/dev/null
+          (cd qa && npx playwright test tests/verified --project chromium-desktop)
+      - name: Upload browser traces and JUnit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: int-reg01-frontend-${{ github.run_id }}
+          path: qa/artifacts/
+          if-no-files-found: warn
+          retention-days: 14
