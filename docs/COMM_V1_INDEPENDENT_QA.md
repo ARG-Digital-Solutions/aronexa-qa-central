@@ -29,3 +29,9 @@ No live APIs, PostgreSQL RLS/security, production clinical sign-off, signature/P
 
 ## Cross-repository automation
 This package deliberately does not change the privileged registration dispatcher, QA #11/#12, or Development #81. After it passes independent QA review, propose a separately security-reviewed controller extension to route only the three registered plans, verify child runs and correlate exact SHA and request statuses. No new application PR may be marked QA PASS merely because this proposal exists.
+
+## Reconciliation with QA PR #17
+
+PR #18 is the preferred single implementation. Its billing browser suite includes the negative amount input case formerly unique to PR #17: negative rupee input must be rejected and must not create a fictional invoice. The new COMM-V1 independent browser suite therefore contains **10 cases** (consultation 3, Smart Rx 3, billing 4). QA PR #17 must not be merged alongside this PR because of conflicting workflow and test paths.
+
+**Security review and exact-source test execution remain pending.** Plan/schema lint alone is not acceptance evidence for the new feature previews.
