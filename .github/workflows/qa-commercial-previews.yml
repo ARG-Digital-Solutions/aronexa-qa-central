@@ -1,0 +1,212 @@
+name: AroNexa COMM-V1 Independent Synthetic Feature QA
+run-name: "COMM-V1 ${{ inputs.plan_id }} request ${{ inputs.request_id || 'manual' }} / ${{ inputs.app_sha }}"
+
+# Manual only until a separately reviewed privileged QA Central dispatcher can be extended.
+on:
+  workflow_dispatch:
+    inputs:
+      plan_id:
+        description: 'Exact independently reviewed commercial-preview QA plan'
+        required: true
+        type: choice
+        options:
+          - COMM_V1_T01
+          - COMM_V1_T03
+          - COMM_V1_T04
+      app_sha:
+        description: 'Exact 40-character source PR head SHA; must match plan and current PR'
+        required: true
+        type: string
+      request_id:
+        description: 'Optional dispatcher correlation ID (digits-digits)'
+        required: false
+        type: string
+      acknowledge_synthetic_only:
+        description: 'I authorize fictional data and disposable localhost/browser tests only'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+concurrency:
+  group: comm-v1-${{ inputs.plan_id }}-${{ inputs.app_sha }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    name: Validate approved QA plan, exact SHA and PR file scope
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      app_sha: ${{ steps.pins.outputs.app_sha }}
+      plan_id: ${{ steps.pins.outputs.plan_id }}
+      model_test: ${{ steps.pins.outputs.model_test }}
+      vite_config: ${{ steps.pins.outputs.vite_config }}
+      preview_page: ${{ steps.pins.outputs.preview_page }}
+      browser_suite: ${{ steps.pins.outputs.browser_suite }}
+      source_pr: ${{ steps.pins.outputs.source_pr }}
+    steps:
+      - name: Checkout reviewed QA Central main; never product PR code here
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Validate registered plans offline
+        run: python3 scripts/check_commercial_plans.py
+      - name: Verify live source PR, pinned commit, eight authorized paths
+        id: pins
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          PLAN_ID: ${{ inputs.plan_id }}
+          APP_SHA: ${{ inputs.app_sha }}
+          REQUEST_ID: ${{ inputs.request_id }}
+          ACK: ${{ inputs.acknowledge_synthetic_only }}
+        run: |
+          set -euo pipefail
+          test "$ACK" = true || { echo 'Synthetic-only acknowledgement required' >&2; exit 1; }
+          test -n "$GH_TOKEN" || { echo 'Read-only source token missing' >&2; exit 1; }
+          [[ "$APP_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test -z "$REQUEST_ID" || [[ "$REQUEST_ID" =~ ^[0-9]+-[0-9]+$ ]]
+          case "$PLAN_ID" in COMM_V1_T01|COMM_V1_T03|COMM_V1_T04) ;; *) exit 1 ;; esac
+          PLAN="qa/commercial-plans/$PLAN_ID.json"
+          test -f "$PLAN"
+          test "$(jq -r '.approved_source_sha' "$PLAN")" = "$APP_SHA" || {
+            echo 'Source commit is not the independently reviewed plan SHA' >&2; exit 1;
+          }
+          REPO='ARG-Digital-Solutions/aronexa-healthcare-platform'
+          PR="$(jq -r '.source_pr_number' "$PLAN")"
+          gh api "repos/$REPO/pulls/$PR" > /tmp/aronexa-current-pr.json
+          jq -e --arg sha "$APP_SHA" --arg repo "$REPO" --arg base 'main' '
+            .state == "open" and .head.sha == $sha and
+            .head.repo.full_name == $repo and .base.ref == $base
+          ' /tmp/aronexa-current-pr.json >/dev/null || {
+            echo 'Current source PR head, owner or base changed: REFUSE' >&2; exit 1;
+          }
+          ACTUAL="$(gh api --paginate "repos/$REPO/pulls/$PR/files?per_page=100" | jq -sc '[.[][] | .filename] | sort')"
+          EXPECTED="$(jq -c '.authorized_changed_paths | sort' "$PLAN")"
+          test "$ACTUAL" = "$EXPECTED" || {
+            echo 'Source PR changed-path list differs from reviewed QA scope' >&2; exit 1;
+          }
+          echo "app_sha=$APP_SHA" >> "$GITHUB_OUTPUT"
+          echo "plan_id=$PLAN_ID" >> "$GITHUB_OUTPUT"
+          echo "source_pr=$PR" >> "$GITHUB_OUTPUT"
+          for key in model_test vite_config preview_page browser_suite; do
+            echo "$key=$(jq -r --arg k "$key" '.[$k]' "$PLAN")" >> "$GITHUB_OUTPUT"
+          done
+          echo "Verified plan $PLAN_ID for source PR #$PR at exact SHA $APP_SHA"
+  execute:
+    name: Independent model, standalone build and Playwright acceptance
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout reviewed independent QA test code
+        uses: actions/checkout@v4
+        with:
+          path: qa
+          persist-credentials: false
+      - name: Checkout exact source commit with read-only credential
+        uses: actions/checkout@v4
+        with:
+          repository: ARG-Digital-Solutions/aronexa-healthcare-platform
+          ref: ${{ needs.validate.outputs.app_sha }}
+          token: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          path: app
+          persist-credentials: false
+      - name: Verify actual checkout SHA before executing any app test
+        working-directory: app
+        env:
+          APP_SHA: ${{ needs.validate.outputs.app_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$APP_SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            qa/package-lock.json
+            app/frontend/package-lock.json
+      - name: Install locked frontend dependencies
+        working-directory: app/frontend
+        run: npm ci --no-audit --no-fund
+      - name: Run exact source feature model suite
+        working-directory: app/frontend
+        env:
+          MODEL_TEST: ${{ needs.validate.outputs.model_test }}
+        run: node --experimental-strip-types --test "$MODEL_TEST"
+      - name: Build source TypeScript and dedicated Vite preview
+        working-directory: app/frontend
+        env:
+          VITE_CONFIG: ${{ needs.validate.outputs.vite_config }}
+          PREVIEW_PAGE: ${{ needs.validate.outputs.preview_page }}
+          PLAN_ID: ${{ needs.validate.outputs.plan_id }}
+        run: |
+          set -euo pipefail
+          npm run build
+          npx --no-install vite build --config "$VITE_CONFIG"
+          case "$PLAN_ID" in
+            COMM_V1_T01) DIR=dist-consultation ;;
+            COMM_V1_T03) DIR=dist-smart-rx ;;
+            COMM_V1_T04) DIR=dist-billing ;;
+            *) exit 1 ;;
+          esac
+          test -s "$DIR/$PREVIEW_PAGE" || {
+            echo 'Dedicated preview build artifact missing' >&2; exit 1;
+          }
+      - name: Install locked independent browser harness and Chromium
+        working-directory: qa
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Verify localhost-only independent browser acceptance
+        shell: bash
+        env:
+          ARONEXA_BASE_URL: http://127.0.0.1:5175/
+          BROWSER_SUITE: ${{ needs.validate.outputs.browser_suite }}
+        run: |
+          set -euo pipefail
+          (cd app/frontend && npm run dev -- --host 127.0.0.1 --port 5175 --strictPort) >/tmp/comm-v1-vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          for attempt in $(seq 1 30); do
+            if curl --silent --fail "$ARONEXA_BASE_URL" >/dev/null; then break; fi
+            sleep 1
+          done
+          curl --fail "$ARONEXA_BASE_URL" >/dev/null
+          (cd qa && npx playwright test -c playwright.commercial.config.mjs \
+            "tests/commercial/$BROWSER_SUITE" --project chromium-desktop)
+      - name: Preserve pinned execution provenance
+        if: always()
+        env:
+          APP_SHA: ${{ needs.validate.outputs.app_sha }}
+          PLAN_ID: ${{ needs.validate.outputs.plan_id }}
+          PR_NUMBER: ${{ needs.validate.outputs.source_pr }}
+        run: |
+          mkdir -p qa/artifacts/commercial
+          python3 - <<'PY'
+          import datetime,json,os,pathlib
+          data={
+            "plan_id":os.environ.get("PLAN_ID"),
+            "source_pr_number":os.environ.get("PR_NUMBER"),
+            "source_sha":os.environ.get("APP_SHA"),
+            "qa_workflow_sha":os.environ.get("GITHUB_SHA"),
+            "run_id":os.environ.get("GITHUB_RUN_ID"),
+            "run_attempt":os.environ.get("GITHUB_RUN_ATTEMPT"),
+            "timestamp_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "result":"Inspect GitHub job and JUnit/Playwright outcomes; not automatically a PASS",
+            "release_approved":False,
+            "synthetic_only":True
+          }
+          pathlib.Path("qa/artifacts/commercial/provenance.json").write_text(json.dumps(data,indent=2)+"\n")
+          PY
+      - name: Publish JUnit, Playwright screenshots, traces and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comm-v1-${{ needs.validate.outputs.plan_id }}-${{ github.run_id }}
+          path: qa/artifacts/commercial/
+          if-no-files-found: warn
+          retention-days: 14

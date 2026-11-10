@@ -1,0 +1,33 @@
+{
+  "plan_id": "COMM_V1_T01",
+  "qa_issue_number": 16,
+  "feature": "Doctor Consultation synthetic preview",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "source_pr_number": 75,
+  "source_base_branch": "main",
+  "approved_source_sha": "72638f1aa78e6f43c1043526c910c3656e81ebce",
+  "authorized_changed_paths": [
+    "docs/phases/COMM_V1_T01_SYNTHETIC_CONSULTATION.md",
+    "frontend/consultation-preview.html",
+    "frontend/src/consultation/ConsultationPreview.tsx",
+    "frontend/src/consultation/consultation.css",
+    "frontend/src/consultation/model.ts",
+    "frontend/src/consultation/preview.tsx",
+    "frontend/test/consultation-model.test.mjs",
+    "frontend/vite.consultation.config.ts"
+  ],
+  "qa_workflow": "qa-commercial-previews.yml",
+  "model_test": "test/consultation-model.test.mjs",
+  "vite_config": "vite.consultation.config.ts",
+  "preview_page": "consultation-preview.html",
+  "browser_suite": "consultation.spec.mjs",
+  "required_checks": [
+    "exact_sha_and_scope",
+    "source_model_tests",
+    "standalone_preview_build",
+    "independent_browser_acceptance"
+  ],
+  "synthetic_only": true,
+  "independent_review_required": true,
+  "customer_release_allowed_on_ci_pass": false
+}
