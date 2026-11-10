@@ -20,6 +20,7 @@ export default defineConfig({
   ],
   use: {
     baseURL: origin.href,
+    serviceWorkers: 'block',
     timezoneId: 'Asia/Kolkata',
     screenshot: 'only-on-failure',
     trace: 'retain-on-failure',

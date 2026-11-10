@@ -17,19 +17,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           persist-credentials: false
-      - name: Verify plan allowlist and six invalid-input refusals
+      - name: Verify plan schema and changed-file rejection cases
         run: python3 scripts/check_commercial_plans.py
       - name: Validate independent Playwright source syntax (no secrets)
         run: |
+          set -euo pipefail
           for file in playwright.commercial.config.mjs tests/commercial/*.mjs; do
             node --check "$file"
           done
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5.6.0
         with:
           go-version: '1.24'
+          cache: false
       - name: Lint review-only workflow YAML
         run: |
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -shellcheck= \

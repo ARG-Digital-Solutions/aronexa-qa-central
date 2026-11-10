@@ -60,6 +60,35 @@ def validate(d):
         raise ValueError(f"{plan_id}: missing description")
     return True
 
+def validate_source_pr(pr, plan):
+    repo = plan["source_repository"]
+    if (
+        pr["number"] != plan["source_pr_number"] or
+        pr["state"] != "open" or
+        pr["head"]["sha"] != plan["approved_source_sha"] or
+        pr["head"]["repo"]["full_name"] != repo or
+        pr["base"]["repo"]["full_name"] != repo or
+        pr["base"]["ref"] != plan["source_base_branch"] or
+        pr["changed_files"] != len(plan["authorized_changed_paths"]) or
+        not re.fullmatch(r"[0-9a-f]{40}", pr["base"]["sha"])
+    ):
+        raise ValueError("Source PR identity, head, base or file count differs from the reviewed plan")
+    return pr["base"]["sha"]
+
+
+def validate_changed_files(files, plan):
+    if not isinstance(files, list) or any(
+        not isinstance(entry, dict) or
+        entry.get("status") != "added" or
+        "previous_filename" in entry or
+        not isinstance(entry.get("filename"), str)
+        for entry in files
+    ):
+        raise ValueError("Source scope must contain only newly added files")
+    if sorted(entry["filename"] for entry in files) != sorted(plan["authorized_changed_paths"]):
+        raise ValueError("Source PR changed-path list differs from reviewed QA scope")
+
+
 def main():
     paths = sorted(DIRECTORY.glob("*.json"))
     if {p.stem for p in paths} != set(KNOWN):
@@ -87,11 +116,74 @@ def main():
         except ValueError:
             continue
         raise ValueError("Negative-path FAILED: " + label)
-    print("COMM-V1 six security/scope negative-path cases PASS")
+    print("COMM-V1 six plan negative-path cases PASS")
+
+    additions = [{"filename": path, "status": "added"} for path in original["authorized_changed_paths"]]
+    validate_changed_files(additions, original)
+    for label, files in (
+        ("rename", [{**additions[0], "status": "renamed", "previous_filename": "old.md"}, *additions[1:]]),
+        ("deletion", [{**additions[0], "status": "removed"}, *additions[1:]]),
+        ("modification", [{**additions[0], "status": "modified"}, *additions[1:]]),
+        ("previous path", [{**additions[0], "previous_filename": "old.md"}, *additions[1:]]),
+        ("duplicate path", [additions[1], *additions[1:]]),
+        ("missing path", additions[1:]),
+        ("extra path", [*additions, {"filename": "backend/pom.xml", "status": "added"}]),
+    ):
+        try:
+            validate_changed_files(files, original)
+        except ValueError:
+            continue
+        raise ValueError("Changed-file negative-path FAILED: " + label)
+    print("COMM-V1 seven changed-file negative-path cases PASS")
+
+    repo = original["source_repository"]
+    source_pr = {
+        "number": original["source_pr_number"],
+        "state": "open",
+        "head": {"sha": original["approved_source_sha"], "repo": {"full_name": repo}},
+        "base": {"ref": "main", "sha": "a" * 40, "repo": {"full_name": repo}},
+        "changed_files": 8,
+    }
+    validate_source_pr(source_pr, original)
+    for label, change in (
+        ("closed PR", {"state": "closed"}),
+        ("wrong PR", {"number": 1}),
+        ("stale SHA", {"head": {**source_pr["head"], "sha": "b" * 40}}),
+        ("wrong source owner", {"head": {**source_pr["head"], "repo": {"full_name": "fork/repo"}}}),
+        ("wrong base repository", {"base": {**source_pr["base"], "repo": {"full_name": "fork/repo"}}}),
+        ("wrong base branch", {"base": {**source_pr["base"], "ref": "feature"}}),
+        ("invalid base SHA", {"base": {**source_pr["base"], "sha": "main"}}),
+        ("widened scope", {"changed_files": 9}),
+    ):
+        try:
+            validate_source_pr({**source_pr, **change}, original)
+        except ValueError:
+            continue
+        raise ValueError("Source PR negative-path FAILED: " + label)
+    print("COMM-V1 eight mocked source PR refusals PASS")
+
+
+def load_plan(plan_id):
+    if plan_id not in KNOWN:
+        raise ValueError("unregistered plan id")
+    plan = json.loads((DIRECTORY / (plan_id + ".json")).read_text(encoding="utf-8"))
+    if plan.get("plan_id") != plan_id:
+        raise ValueError("plan filename mismatch")
+    validate(plan)
+    return plan
 
 if __name__ == "__main__":
     try:
-        main()
-    except (ValueError, OSError, json.JSONDecodeError) as exc:
+        if len(sys.argv) == 1:
+            main()
+        elif len(sys.argv) == 3 and sys.argv[1] == "--changed-files":
+            plan = load_plan(sys.argv[2])
+            validate_changed_files(json.load(sys.stdin), plan)
+            print(f"Source file scope PASS {sys.argv[2]}: eight reviewed additions")
+        elif len(sys.argv) == 3 and sys.argv[1] == "--source-pr":
+            print(validate_source_pr(json.load(sys.stdin), load_plan(sys.argv[2])))
+        else:
+            raise ValueError("expected --changed-files PLAN_ID, --source-pr PLAN_ID or no arguments")
+    except (ValueError, OSError, KeyError, TypeError) as exc:
         print("COMM-V1 QA PLAN INVALID:", exc, file=sys.stderr)
         sys.exit(1)

@@ -20,9 +20,29 @@ test('COMM-T04 invoice, partial payment, linked refund reconcile daily report', 
   await page.locator('#bill-refund').fill('100');
   await page.getByRole('button',{name:'Record demo refund'}).click();
   await expect(page.getByRole('status')).toContainText('Synthetic refund entry recorded');
-  await expect(page.locator('.bill-report')).toContainText('Net collections');
-  await expect(page.locator('.bill-report')).toContainText('150');
-  await expect(page.locator('.bill-totals')).toContainText('350');
+  const report = page.locator('.bill-report');
+  const totals = page.locator('.bill-totals');
+  for (const [panel, label, amount] of [
+    [report, 'Invoices', '1'],
+    [report, 'Billed', '₹500.00'],
+    [report, 'Payments', '₹250.00'],
+    [report, 'Refunds', '₹100.00'],
+    [report, 'Net collections', '₹150.00'],
+    [totals, 'Total fees', '₹500.00'],
+    [totals, 'Net paid', '₹150.00'],
+    [totals, 'Outstanding', '₹350.00'],
+  ]) {
+    const value = panel.locator('div').filter({ has: page.getByText(label, {exact:true}) }).locator('strong');
+    await expect(value).toHaveText(amount);
+  }
+  const history = page.getByRole('table', {name:'Append-only demonstration transaction history'});
+  const payment = history.getByRole('row').filter({ has: page.getByRole('cell', {name:'PAYMENT',exact:true}) });
+  const refund = history.getByRole('row').filter({ has: page.getByRole('cell', {name:'REFUND',exact:true}) });
+  await expect(payment.getByRole('cell').nth(2)).toHaveText('₹250.00');
+  await expect(refund.getByRole('cell').nth(2)).toHaveText('₹100.00');
+  const paymentReference = await payment.getByRole('cell').nth(3).innerText();
+  expect(paymentReference.trim()).not.toBe('');
+  await expect(refund.getByRole('cell').nth(3)).toHaveText(paymentReference);
 });
 test('COMM-T04 reload loses fictional invoices; responsive mobile', async ({page}) => {
   await page.setViewportSize({width:390,height:844});

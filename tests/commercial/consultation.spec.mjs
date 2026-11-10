@@ -17,9 +17,17 @@ test('COMM-T01 save only drafts and reset on patient switch', async ({page}) => 
   await page.locator('#consult-plan').fill('Synthetic monitoring plan');
   await page.getByRole('button',{name:'Save synthetic draft'}).click();
   await expect(page.getByRole('status')).toContainText('version 2 saved');
-  await page.locator('.consult-patient-choice').last().click();
+  const complaint = page.locator('#consult-complaint');
+  const unsavedComplaint = 'Fictional edit to discard';
+  await complaint.fill(unsavedComplaint);
+  await expect(complaint).toHaveValue(unsavedComplaint);
+  await expect(page.getByRole('status')).toContainText('Unsaved changes');
+  const nextPatient = page.locator('.consult-patient-choice').last();
+  await expect(nextPatient).toHaveAttribute('aria-pressed', 'false');
+  await nextPatient.click();
+  await expect(nextPatient).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByRole('status')).toContainText('Unsaved edits');
-  await expect(page.locator('#consult-complaint')).toHaveValue('');
+  await expect(complaint).toHaveValue('');
 });
 test('COMM-T01 mobile view and explicit draft limitation', async ({page}) => {
   await page.setViewportSize({width:390,height:844});

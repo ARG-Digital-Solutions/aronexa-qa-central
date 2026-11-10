@@ -22,8 +22,9 @@ test('COMM-T03 clinician-entered medicine is a watermarked draft only', async ({
 });
 test('COMM-T03 ink undo/redo and accessible text alternative', async ({page}) => {
   await openLocalPreview(page, 'smart-rx-preview.html');
-  const canvas=page.locator('canvas[aria-label^="Drawing surface"]');
-  const bounds=await canvas.boundingBox();
+  const canvas = page.locator('canvas[aria-label^="Drawing surface"]');
+  await canvas.scrollIntoViewIfNeeded();
+  const bounds = await canvas.boundingBox();
   expect(bounds).toBeTruthy();
   await page.mouse.move(bounds.x+20,bounds.y+20);
   await page.mouse.down();
@@ -35,8 +36,15 @@ test('COMM-T03 ink undo/redo and accessible text alternative', async ({page}) =>
   await expect(page.getByText('0 strokes',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Redo'}).click();
   await expect(page.getByText('1 strokes',{exact:true})).toBeVisible();
-  await page.locator('#rx-note').fill('Fictional annotation');
-  await page.getByRole('button',{name:'Save note to demo'}).click();
+  const note = page.getByRole('textbox',{name:'Accessible text alternative / clinical note'});
+  await note.focus();
+  await expect(note).toBeFocused();
+  await page.keyboard.type('Fictional annotation');
+  await expect(note).toHaveValue('Fictional annotation');
+  await page.keyboard.press('Tab');
+  const saveNote = page.getByRole('button',{name:'Save note to demo'});
+  await expect(saveNote).toBeFocused();
+  await page.keyboard.press('Enter');
   await expect(page.getByRole('status')).toContainText('Free text saved');
   await page.setViewportSize({width:390,height:844});
   await noHorizontalScroll(page);
