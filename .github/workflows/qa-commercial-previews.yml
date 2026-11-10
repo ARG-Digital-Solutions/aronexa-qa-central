@@ -1,5 +1,5 @@
 name: AroNexa Commercial Preview Independent QA
-run-name: "Preview QA PR #${{ inputs.pr_number } / ${{ inputs.app_sha }"
+run-name: "Preview QA PR #${{ inputs.pr_number }} / ${{ inputs.app_sha }}"
 on:
   workflow_dispatch:
     inputs:
@@ -20,17 +20,17 @@ on:
 permissions:
   contents: read
 concurrency:
-  group: commercial-preview-${{ inputs.pr_number }-${{ inputs.app_sha }
+  group: commercial-preview-${{ inputs.pr_number }}-${{ inputs.app_sha }}
   cancel-in-progress: false
 jobs:
   validate:
     runs-on: ubuntu-latest
     timeout-minutes: 8
     outputs:
-      feature: ${{ steps.guard.outputs.feature }
-      model_test: ${{ steps.guard.outputs.model_test }
-      vite_config: ${{ steps.guard.outputs.vite_config }
-      preview_page: ${{ steps.guard.outputs.preview_page }
+      feature: ${{ steps.guard.outputs.feature }}
+      model_test: ${{ steps.guard.outputs.model_test }}
+      vite_config: ${{ steps.guard.outputs.vite_config }}
+      preview_page: ${{ steps.guard.outputs.preview_page }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,10 +40,10 @@ jobs:
       - name: Validate source PR SHA, scope and synthetic-only acknowledgement
         id: guard
         env:
-          GH_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }
-          PR: ${{ inputs.pr_number }
-          SHA: ${{ inputs.app_sha }
-          ACK: ${{ inputs.acknowledge_synthetic_only }
+          GH_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          PR: ${{ inputs.pr_number }}
+          SHA: ${{ inputs.app_sha }}
+          ACK: ${{ inputs.acknowledge_synthetic_only }}
         shell: bash
         run: |
           set -euo pipefail
@@ -72,7 +72,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      ARONEXA_QA_FEATURE: ${{ needs.validate.outputs.feature }
+      ARONEXA_QA_FEATURE: ${{ needs.validate.outputs.feature }}
       ARONEXA_BASE_URL: http://127.0.0.1:5175/
     steps:
       - uses: actions/checkout@v4
@@ -82,13 +82,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           repository: ARG-Digital-Solutions/aronexa-healthcare-platform
-          ref: ${{ inputs.app_sha }
-          token: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }
+          ref: ${{ inputs.app_sha }}
+          token: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
           path: app
           persist-credentials: false
       - name: Confirm source SHA
         env:
-          SHA: ${{ inputs.app_sha }
+          SHA: ${{ inputs.app_sha }}
         working-directory: app
         run: test "$(git rev-parse HEAD)" = "$SHA"
       - uses: actions/setup-node@v4
@@ -101,19 +101,19 @@ jobs:
       - name: Execute source model tests
         working-directory: app/frontend
         env:
-          TEST_FILE: ${{ needs.validate.outputs.model_test }
+          TEST_FILE: ${{ needs.validate.outputs.model_test }}
         run: node --experimental-strip-types --test "$TEST_FILE"
       - name: Compile and build standalone Vite preview
         working-directory: app/frontend
         env:
-          VITE_CONFIG: ${{ needs.validate.outputs.vite_config }
+          VITE_CONFIG: ${{ needs.validate.outputs.vite_config }}
         run: |
           npm run build
           npx vite build --config "$VITE_CONFIG"
       - name: Run independent browser acceptance against isolated localhost Vite
         shell: bash
         env:
-          PAGE_PATH: ${{ needs.validate.outputs.preview_page }
+          PAGE_PATH: ${{ needs.validate.outputs.preview_page }}
         run: |
           set -euo pipefail
           (cd app/frontend && npm run dev -- --host 127.0.0.1 --port 5175 --strictPort) >/tmp/vite.log 2>&1 &
@@ -128,8 +128,8 @@ jobs:
       - name: Record provenance and audit details
         if: always()
         env:
-          SHA: ${{ inputs.app_sha }
-          PR: ${{ inputs.pr_number }
+          SHA: ${{ inputs.app_sha }}
+          PR: ${{ inputs.pr_number }}
         run: |
           mkdir -p qa/artifacts/commercial
           jq -n --arg source "$SHA" --arg qa "$GITHUB_SHA" --arg pr "$PR" --arg run "$GITHUB_RUN_ID" \
@@ -138,7 +138,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: commercial-preview-${{ inputs.pr_number }-${{ github.run_id }
+          name: commercial-preview-${{ inputs.pr_number }}-${{ github.run_id }}
           path: qa/artifacts/commercial/
           if-no-files-found: warn
           retention-days: 14
