@@ -33,3 +33,11 @@ test('COMM-T04 reload loses fictional invoices; responsive mobile', async ({page
   await expect(page.getByText('Start by creating a synthetic bill above.')).toBeVisible();
   await noHorizontalScroll(page);
 });
+
+test('COMM-T04 negative rupee input is rejected without creating an invoice', async ({page}) => {
+  await openLocalPreview(page, 'billing-preview.html');
+  await page.locator('#bill-fee').fill('-10');
+  await page.getByRole('button',{name:'Create synthetic bill'}).click();
+  await expect(page.getByRole('status')).toContainText('Enter a valid amount');
+  await expect(page.getByText('Start by creating a synthetic bill above.')).toBeVisible();
+});
