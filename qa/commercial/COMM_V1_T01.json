@@ -1,0 +1,25 @@
+{
+  "plan_id": "COMM_V1_T01",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "pr_number": 75,
+  "qa_issue": 13,
+  "feature": "consultation",
+  "approved_sha": "72638f1aa78e6f43c1043526c910c3656e81ebce",
+  "base_branch": "main",
+  "model_test": "test/consultation-model.test.mjs",
+  "vite_config": "vite.consultation.config.ts",
+  "preview_page": "consultation-preview.html",
+  "expected_paths": [
+    "frontend/consultation-preview.html",
+    "frontend/src/consultation/ConsultationPreview.tsx",
+    "frontend/src/consultation/consultation.css",
+    "frontend/src/consultation/model.ts",
+    "frontend/src/consultation/preview.tsx",
+    "frontend/test/consultation-model.test.mjs",
+    "frontend/vite.consultation.config.ts",
+    "docs/phases/COMM_V1_T01_SYNTHETIC_CONSULTATION.md"
+  ],
+  "synthetic_only": true,
+  "independent_review_required": true,
+  "release_approved": false
+}

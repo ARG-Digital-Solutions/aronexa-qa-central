@@ -1,0 +1,144 @@
+name: AroNexa Commercial Preview Independent QA
+run-name: "Preview QA PR #${{ inputs.pr_number } / ${{ inputs.app_sha }"
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Choose exact source PR'
+        required: true
+        type: choice
+        options: ['75', '78', '79']
+      app_sha:
+        description: 'Exact reviewed 40-character source PR head SHA'
+        required: true
+        type: string
+      acknowledge_synthetic_only:
+        description: 'No live records, original Windows DB or production APIs'
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: commercial-preview-${{ inputs.pr_number }-${{ inputs.app_sha }
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      feature: ${{ steps.guard.outputs.feature }
+      model_test: ${{ steps.guard.outputs.model_test }
+      vite_config: ${{ steps.guard.outputs.vite_config }
+      preview_page: ${{ steps.guard.outputs.preview_page }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check approved plans
+        run: python3 scripts/check_commercial_previews.py
+      - name: Validate source PR SHA, scope and synthetic-only acknowledgement
+        id: guard
+        env:
+          GH_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }
+          PR: ${{ inputs.pr_number }
+          SHA: ${{ inputs.app_sha }
+          ACK: ${{ inputs.acknowledge_synthetic_only }
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$ACK" = "true"
+          test -n "$GH_TOKEN"
+          [[ "$SHA" =~ ^[a-f0-9]{40}$ ]]
+          case "$PR" in
+            75) PLAN=COMM_V1_T01 ;;
+            78) PLAN=COMM_V1_T03 ;;
+            79) PLAN=COMM_V1_T04 ;;
+            *) exit 1 ;;
+          esac
+          FILE="qa/commercial/$PLAN.json"
+          test "$SHA" = "$(jq -r .approved_sha "$FILE")" || { echo 'Source SHA not reviewed in QA plan' >&2; exit 1; }
+          gh api "repos/ARG-Digital-Solutions/aronexa-healthcare-platform/pulls/$PR" > /tmp/pr.json
+          jq -e --arg sha "$SHA" '.state=="open" and .head.sha==$sha and .head.repo.full_name=="ARG-Digital-Solutions/aronexa-healthcare-platform" and .base.ref=="main"' /tmp/pr.json > /dev/null
+          gh api "repos/ARG-Digital-Solutions/aronexa-healthcare-platform/pulls/$PR/files?per_page=100" --jq '.[].filename' | sort > /tmp/actual.txt
+          jq -r '.expected_paths[]' "$FILE" | sort > /tmp/approved.txt
+          diff -u /tmp/approved.txt /tmp/actual.txt
+          echo "feature=$(jq -r .feature "$FILE")" >> "$GITHUB_OUTPUT"
+          echo "model_test=$(jq -r .model_test "$FILE")" >> "$GITHUB_OUTPUT"
+          echo "vite_config=$(jq -r .vite_config "$FILE")" >> "$GITHUB_OUTPUT"
+          echo "preview_page=$(jq -r .preview_page "$FILE")" >> "$GITHUB_OUTPUT"
+  execute:
+    needs: validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      ARONEXA_QA_FEATURE: ${{ needs.validate.outputs.feature }
+      ARONEXA_BASE_URL: http://127.0.0.1:5175/
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: qa
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          repository: ARG-Digital-Solutions/aronexa-healthcare-platform
+          ref: ${{ inputs.app_sha }
+          token: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }
+          path: app
+          persist-credentials: false
+      - name: Confirm source SHA
+        env:
+          SHA: ${{ inputs.app_sha }
+        working-directory: app
+        run: test "$(git rev-parse HEAD)" = "$SHA"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - name: Install dependencies and Chromium
+        run: |
+          (cd qa && npm ci --no-audit --no-fund && npx playwright install --with-deps chromium)
+          (cd app/frontend && npm ci --no-audit --no-fund)
+      - name: Execute source model tests
+        working-directory: app/frontend
+        env:
+          TEST_FILE: ${{ needs.validate.outputs.model_test }
+        run: node --experimental-strip-types --test "$TEST_FILE"
+      - name: Compile and build standalone Vite preview
+        working-directory: app/frontend
+        env:
+          VITE_CONFIG: ${{ needs.validate.outputs.vite_config }
+        run: |
+          npm run build
+          npx vite build --config "$VITE_CONFIG"
+      - name: Run independent browser acceptance against isolated localhost Vite
+        shell: bash
+        env:
+          PAGE_PATH: ${{ needs.validate.outputs.preview_page }
+        run: |
+          set -euo pipefail
+          (cd app/frontend && npm run dev -- --host 127.0.0.1 --port 5175 --strictPort) >/tmp/vite.log 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:5175/$PAGE_PATH" >/dev/null; then break; fi
+            sleep 1
+          done
+          curl -fsS "http://127.0.0.1:5175/$PAGE_PATH" >/dev/null
+          (cd qa && npx playwright test --config playwright.commercial.config.mjs)
+      - name: Record provenance and audit details
+        if: always()
+        env:
+          SHA: ${{ inputs.app_sha }
+          PR: ${{ inputs.pr_number }
+        run: |
+          mkdir -p qa/artifacts/commercial
+          jq -n --arg source "$SHA" --arg qa "$GITHUB_SHA" --arg pr "$PR" --arg run "$GITHUB_RUN_ID" \
+            '{source_sha:$source,qa_sha:$qa,pr:$pr,run_id:$run,release_approved:false,actual_result:"See job and JUnit result"}' > qa/artifacts/commercial/provenance.json
+      - name: Upload failure traces and JUnit/HTML evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: commercial-preview-${{ inputs.pr_number }-${{ github.run_id }
+          path: qa/artifacts/commercial/
+          if-no-files-found: warn
+          retention-days: 14

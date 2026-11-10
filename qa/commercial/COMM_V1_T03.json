@@ -1,0 +1,25 @@
+{
+  "plan_id": "COMM_V1_T03",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "pr_number": 78,
+  "qa_issue": 14,
+  "feature": "smart-rx",
+  "approved_sha": "8b935abfb23ef818e248c2104e8fff55be5d6b52",
+  "base_branch": "main",
+  "model_test": "test/smart-rx-model.test.mjs",
+  "vite_config": "vite.smart-rx.config.ts",
+  "preview_page": "smart-rx-preview.html",
+  "expected_paths": [
+    "frontend/smart-rx-preview.html",
+    "frontend/src/smart-rx/SmartRxPreview.tsx",
+    "frontend/src/smart-rx/model.ts",
+    "frontend/src/smart-rx/preview.css",
+    "frontend/src/smart-rx/preview.tsx",
+    "frontend/test/smart-rx-model.test.mjs",
+    "frontend/vite.smart-rx.config.ts",
+    "docs/phases/COMM_V1_T03_SMART_RX_SYNTHETIC.md"
+  ],
+  "synthetic_only": true,
+  "independent_review_required": true,
+  "release_approved": false
+}

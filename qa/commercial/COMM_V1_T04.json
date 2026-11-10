@@ -1,0 +1,25 @@
+{
+  "plan_id": "COMM_V1_T04",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "pr_number": 79,
+  "qa_issue": 15,
+  "feature": "billing",
+  "approved_sha": "c95b50d261ef457e336abf22faab30b720202b28",
+  "base_branch": "main",
+  "model_test": "test/billing-model.test.mjs",
+  "vite_config": "vite.billing.config.ts",
+  "preview_page": "billing-preview.html",
+  "expected_paths": [
+    "frontend/billing-preview.html",
+    "frontend/src/billing/BillingPreview.tsx",
+    "frontend/src/billing/model.ts",
+    "frontend/src/billing/preview.css",
+    "frontend/src/billing/preview.tsx",
+    "frontend/test/billing-model.test.mjs",
+    "frontend/vite.billing.config.ts",
+    "docs/phases/COMM_V1_T04_BILLING_SYNTHETIC.md"
+  ],
+  "synthetic_only": true,
+  "independent_review_required": true,
+  "release_approved": false
+}

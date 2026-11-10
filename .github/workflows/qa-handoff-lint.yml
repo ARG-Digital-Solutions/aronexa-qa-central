@@ -17,7 +17,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Reject incomplete or unsafe QA plan declarations
-        run: python3 scripts/check_qa_plans.py
+        run: |
+          python3 scripts/check_qa_plans.py
+          python3 scripts/check_commercial_previews.py
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
@@ -26,4 +28,5 @@ jobs:
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -shellcheck= \
             .github/workflows/qa-cross-repo-handoff.yml \
             .github/workflows/qa-int-reg01.yml \
-            .github/workflows/qa-handoff-lint.yml
+            .github/workflows/qa-handoff-lint.yml \
+            .github/workflows/qa-commercial-previews.yml
