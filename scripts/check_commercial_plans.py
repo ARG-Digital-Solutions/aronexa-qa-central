@@ -21,6 +21,10 @@ KNOWN = {
                     "COMM_V1_T04_BILLING_SYNTHETIC.md", "billing-model.test.mjs",
                     "billing-preview.html", "vite.billing.config.ts", "billing.spec.mjs",
                     ("BillingPreview.tsx", "model.ts", "preview.css", "preview.tsx")),
+    "COMM_V1_T06": (83, "fa7c11d689f18bcbd9b81296d52d39806738f8a0", "opd-journey",
+                    "COMM_V1_T06_SYNTHETIC_OPD_JOURNEY.md", "opd-journey-model.test.mjs",
+                    "opd-journey-preview.html", "vite.opd-journey.config.ts", "opd-journey.spec.mjs",
+                    ("OpdJourneyPreview.tsx", "journey.css", "model.ts", "preview.tsx")),
 }
 CHECKS = sorted(("exact_sha_and_scope", "source_model_tests",
                  "standalone_preview_build", "independent_browser_acceptance"))
@@ -40,7 +44,7 @@ def validate(d):
     constraints = {
         "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
         "source_pr_number": pr, "source_base_branch": "main",
-        "approved_source_sha": sha, "qa_issue_number": 16,
+        "approved_source_sha": sha, "qa_issue_number": 19 if plan_id == "COMM_V1_T06" else 16,
         "qa_workflow": "qa-commercial-previews.yml",
         "model_test": "test/" + model, "preview_page": html,
         "vite_config": vite, "browser_suite": suite,
