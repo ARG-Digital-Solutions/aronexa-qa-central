@@ -1,0 +1,33 @@
+{
+  "plan_id": "COMM_V1_T06",
+  "qa_issue_number": 19,
+  "feature": "One synthetic OPD visit journey with receptionist, doctor and billing handoffs",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "source_pr_number": 83,
+  "source_base_branch": "main",
+  "approved_source_sha": "fa7c11d689f18bcbd9b81296d52d39806738f8a0",
+  "authorized_changed_paths": [
+    "docs/phases/COMM_V1_T06_SYNTHETIC_OPD_JOURNEY.md",
+    "frontend/opd-journey-preview.html",
+    "frontend/src/opd-journey/OpdJourneyPreview.tsx",
+    "frontend/src/opd-journey/journey.css",
+    "frontend/src/opd-journey/model.ts",
+    "frontend/src/opd-journey/preview.tsx",
+    "frontend/test/opd-journey-model.test.mjs",
+    "frontend/vite.opd-journey.config.ts"
+  ],
+  "qa_workflow": "qa-commercial-previews.yml",
+  "model_test": "test/opd-journey-model.test.mjs",
+  "vite_config": "vite.opd-journey.config.ts",
+  "preview_page": "opd-journey-preview.html",
+  "browser_suite": "opd-journey.spec.mjs",
+  "required_checks": [
+    "exact_sha_and_scope",
+    "source_model_tests",
+    "standalone_preview_build",
+    "independent_browser_acceptance"
+  ],
+  "synthetic_only": true,
+  "independent_review_required": true,
+  "customer_release_allowed_on_ci_pass": false
+}
