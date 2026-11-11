@@ -1,0 +1,33 @@
+{
+  "plan_id": "COMM_V1_T04",
+  "qa_issue_number": 16,
+  "feature": "OPD Billing and Daily Reports synthetic preview",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "source_pr_number": 79,
+  "source_base_branch": "main",
+  "approved_source_sha": "c95b50d261ef457e336abf22faab30b720202b28",
+  "authorized_changed_paths": [
+    "docs/phases/COMM_V1_T04_BILLING_SYNTHETIC.md",
+    "frontend/billing-preview.html",
+    "frontend/src/billing/BillingPreview.tsx",
+    "frontend/src/billing/model.ts",
+    "frontend/src/billing/preview.css",
+    "frontend/src/billing/preview.tsx",
+    "frontend/test/billing-model.test.mjs",
+    "frontend/vite.billing.config.ts"
+  ],
+  "qa_workflow": "qa-commercial-previews.yml",
+  "model_test": "test/billing-model.test.mjs",
+  "vite_config": "vite.billing.config.ts",
+  "preview_page": "billing-preview.html",
+  "browser_suite": "billing.spec.mjs",
+  "required_checks": [
+    "exact_sha_and_scope",
+    "source_model_tests",
+    "standalone_preview_build",
+    "independent_browser_acceptance"
+  ],
+  "synthetic_only": true,
+  "independent_review_required": true,
+  "customer_release_allowed_on_ci_pass": false
+}

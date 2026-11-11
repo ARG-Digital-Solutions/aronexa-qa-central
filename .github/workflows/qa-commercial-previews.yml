@@ -1,0 +1,260 @@
+name: AroNexa COMM-V1 Independent Synthetic Feature QA
+run-name: "COMM-V1 ${{ inputs.plan_id }} request ${{ inputs.request_id || 'manual' }} / ${{ inputs.app_sha }}"
+
+# Manual only until a separately reviewed privileged QA Central dispatcher can be extended.
+on:
+  workflow_dispatch:
+    inputs:
+      plan_id:
+        description: 'Exact independently reviewed commercial-preview QA plan'
+        required: true
+        type: choice
+        options:
+          - COMM_V1_T01
+          - COMM_V1_T03
+          - COMM_V1_T04
+      app_sha:
+        description: 'Exact 40-character source PR head SHA; must match plan and current PR'
+        required: true
+        type: string
+      request_id:
+        description: 'Optional dispatcher correlation ID (digits-digits)'
+        required: false
+        type: string
+      acknowledge_synthetic_only:
+        description: 'I authorize fictional data and disposable localhost/browser tests only'
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+concurrency:
+  group: comm-v1-${{ inputs.plan_id }}-${{ inputs.app_sha }}
+  cancel-in-progress: false
+jobs:
+  validate:
+    name: Validate approved QA plan, exact SHA and PR file scope
+    if: github.event_name == 'workflow_dispatch' && github.repository == 'ARG-Digital-Solutions/aronexa-qa-central' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: comm-v1-source-read
+    timeout-minutes: 8
+    outputs:
+      app_sha: ${{ steps.pins.outputs.app_sha }}
+      base_sha: ${{ steps.pins.outputs.base_sha }}
+      plan_id: ${{ steps.pins.outputs.plan_id }}
+      model_test: ${{ steps.pins.outputs.model_test }}
+      vite_config: ${{ steps.pins.outputs.vite_config }}
+      preview_page: ${{ steps.pins.outputs.preview_page }}
+      browser_suite: ${{ steps.pins.outputs.browser_suite }}
+      source_pr: ${{ steps.pins.outputs.source_pr }}
+    steps:
+      - name: Checkout reviewed QA Central main; never product PR code here
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Validate registered plans offline
+        run: python3 scripts/check_commercial_plans.py
+      - name: Verify live source PR, pinned commit, eight authorized paths
+        id: pins
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.COMM_V1_SOURCE_READ_TOKEN }}
+          PLAN_ID: ${{ inputs.plan_id }}
+          APP_SHA: ${{ inputs.app_sha }}
+          REQUEST_ID: ${{ inputs.request_id }}
+          ACK: ${{ inputs.acknowledge_synthetic_only }}
+        run: |
+          set -euo pipefail
+          test "$ACK" = true || { echo 'Synthetic-only acknowledgement required' >&2; exit 1; }
+          test -n "$GH_TOKEN" || { echo 'Read-only source token missing' >&2; exit 1; }
+          [[ "$APP_SHA" =~ ^[0-9a-f]{40}$ ]]
+          test -z "$REQUEST_ID" || [[ "$REQUEST_ID" =~ ^[0-9]+-[0-9]+$ ]]
+          case "$PLAN_ID" in COMM_V1_T01|COMM_V1_T03|COMM_V1_T04) ;; *) exit 1 ;; esac
+          PLAN="qa/commercial-plans/$PLAN_ID.json"
+          test -f "$PLAN"
+          test "$(jq -r '.approved_source_sha' "$PLAN")" = "$APP_SHA" || {
+            echo 'Source commit is not the independently reviewed plan SHA' >&2; exit 1;
+          }
+          REPO='ARG-Digital-Solutions/aronexa-healthcare-platform'
+          PR="$(jq -r '.source_pr_number' "$PLAN")"
+          verify_pr() {
+            gh api "repos/$REPO/pulls/$PR" |
+              python3 scripts/check_commercial_plans.py --source-pr "$PLAN_ID"
+          }
+          BASE_SHA="$(verify_pr)"
+          # Compare immutable endpoints so a PR update cannot swap the file list during validation.
+          gh api "repos/$REPO/compare/$BASE_SHA...$APP_SHA?per_page=1" |
+            jq -ce '.files | select(type == "array")' |
+            python3 scripts/check_commercial_plans.py --changed-files "$PLAN_ID"
+          test "$(verify_pr)" = "$BASE_SHA" || {
+            echo 'Source PR head, base or scope changed during validation: REFUSE' >&2; exit 1;
+          }
+          echo "app_sha=$APP_SHA" >> "$GITHUB_OUTPUT"
+          echo "base_sha=$BASE_SHA" >> "$GITHUB_OUTPUT"
+          echo "plan_id=$PLAN_ID" >> "$GITHUB_OUTPUT"
+          echo "source_pr=$PR" >> "$GITHUB_OUTPUT"
+          for key in model_test vite_config preview_page browser_suite; do
+            echo "$key=$(jq -r --arg k "$key" '.[$k]' "$PLAN")" >> "$GITHUB_OUTPUT"
+          done
+          echo "Verified plan $PLAN_ID for source PR #$PR at exact SHA $APP_SHA"
+  execute:
+    name: Independent model, standalone build and Playwright acceptance
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: comm-v1-source-read
+    timeout-minutes: 35
+    env:
+      PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d # v1.65.0-noble
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout reviewed independent QA test code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          path: qa
+          persist-credentials: false
+      - name: Checkout exact source commit with read-only credential
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ARG-Digital-Solutions/aronexa-healthcare-platform
+          ref: ${{ needs.validate.outputs.app_sha }}
+          token: ${{ secrets.COMM_V1_SOURCE_READ_TOKEN }}
+          path: app
+          persist-credentials: false
+      - name: Stage verified source and QA harness outside the runner workspace
+        shell: bash
+        env:
+          APP_SHA: ${{ needs.validate.outputs.app_sha }}
+        run: |
+          set -euo pipefail
+          test "$(git -C app rev-parse HEAD)" = "$APP_SHA"
+          stage="$(mktemp -d "$RUNNER_TEMP/comm-v1.XXXXXX")"
+          mkdir -p "$stage/app" "$stage/qa/artifacts/commercial"
+          git -C app archive "$APP_SHA" frontend | tar -x -C "$stage/app"
+          git -C qa archive "$GITHUB_SHA" package.json package-lock.json \
+            playwright.commercial.config.mjs tests/commercial | tar -x -C "$stage/qa"
+          echo "COMM_V1_STAGE=$stage" >> "$GITHUB_ENV"
+      - name: Install locked dependencies without lifecycle scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          for directory in "$COMM_V1_STAGE/app/frontend" "$COMM_V1_STAGE/qa"; do
+            docker run --rm --user "$(id -u):$(id -g)" \
+              --cap-drop=ALL --security-opt=no-new-privileges --env HOME=/tmp \
+              --mount "type=bind,src=$directory,dst=/work" --workdir /work \
+              "$PLAYWRIGHT_IMAGE" npm ci --ignore-scripts --no-audit --no-fund
+          done
+      - name: Run model, builds and browser acceptance in an offline container
+        shell: bash
+        env:
+          MODEL_TEST: ${{ needs.validate.outputs.model_test }}
+          VITE_CONFIG: ${{ needs.validate.outputs.vite_config }}
+          PREVIEW_PAGE: ${{ needs.validate.outputs.preview_page }}
+          PLAN_ID: ${{ needs.validate.outputs.plan_id }}
+          BROWSER_SUITE: ${{ needs.validate.outputs.browser_suite }}
+        run: |
+          set -euo pipefail
+          docker run --rm -i --init --network none --shm-size=1g \
+            --user "$(id -u):$(id -g)" --cap-drop=ALL --security-opt=no-new-privileges \
+            --env HOME=/tmp --env CI=true --env ARONEXA_BASE_URL=http://127.0.0.1:5175/ \
+            --env MODEL_TEST --env VITE_CONFIG --env PREVIEW_PAGE --env PLAN_ID --env BROWSER_SUITE \
+            --mount "type=bind,src=$COMM_V1_STAGE/app/frontend,dst=/work/frontend" \
+            --mount "type=bind,src=$COMM_V1_STAGE/qa,dst=/work/qa,readonly" \
+            --mount "type=bind,src=$COMM_V1_STAGE/qa/artifacts/commercial,dst=/work/qa/artifacts/commercial" \
+            "$PLAYWRIGHT_IMAGE" bash -se <<'RUN_OFFLINE'
+          set -euo pipefail
+          cd /work/frontend
+          node --experimental-strip-types --test "$MODEL_TEST"
+          npm run build
+          ./node_modules/.bin/vite build --config "$VITE_CONFIG"
+          case "$PLAN_ID" in
+            COMM_V1_T01) DIR=dist-consultation ;;
+            COMM_V1_T03) DIR=dist-smart-rx ;;
+            COMM_V1_T04) DIR=dist-billing ;;
+            *) exit 1 ;;
+          esac
+          test -s "$DIR/$PREVIEW_PAGE"
+          ./node_modules/.bin/vite preview --config "$VITE_CONFIG" \
+            --host 127.0.0.1 --port 5175 --strictPort >/tmp/comm-v1-vite.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          if ! node --input-type=module - <<'READY'
+          const url = new URL(process.env.PREVIEW_PAGE, process.env.ARONEXA_BASE_URL);
+          for (let attempt = 0; attempt < 30; attempt++) {
+            const response = await fetch(url, { redirect: 'error', signal: AbortSignal.timeout(1000) })
+              .catch(() => null);
+            if (response?.ok) process.exit(0);
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+          process.exit(1);
+          READY
+          then
+            cat /tmp/comm-v1-vite.log >&2
+            exit 1
+          fi
+          cd /work/qa
+          ./node_modules/.bin/playwright test -c playwright.commercial.config.mjs \
+            "tests/commercial/$BROWSER_SUITE" tests/commercial/network.spec.mjs --project chromium-desktop
+          RUN_OFFLINE
+      - name: Collect regular browser evidence files
+        if: always() && env.COMM_V1_STAGE != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          source="$COMM_V1_STAGE/qa/artifacts/commercial"
+          mkdir -p qa/artifacts/commercial
+          (cd "$source" && find . -type f -links 1 -exec cp --parents -- {} "$GITHUB_WORKSPACE/qa/artifacts/commercial" \;)
+      - name: Preserve pinned execution provenance
+        if: always()
+        env:
+          APP_SHA: ${{ needs.validate.outputs.app_sha }}
+          PLAN_ID: ${{ needs.validate.outputs.plan_id }}
+          PR_NUMBER: ${{ needs.validate.outputs.source_pr }}
+          BASE_SHA: ${{ needs.validate.outputs.base_sha }}
+        run: |
+          mkdir -p qa/artifacts/commercial
+          python3 - <<'PY'
+          import datetime,json,os,pathlib
+          data={
+            "plan_id":os.environ.get("PLAN_ID"),
+            "source_pr_number":os.environ.get("PR_NUMBER"),
+            "source_sha":os.environ.get("APP_SHA"),
+            "source_base_sha":os.environ.get("BASE_SHA"),
+            "qa_workflow_sha":os.environ.get("GITHUB_SHA"),
+            "run_id":os.environ.get("GITHUB_RUN_ID"),
+            "run_attempt":os.environ.get("GITHUB_RUN_ATTEMPT"),
+            "timestamp_utc":datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "result":"Inspect GitHub job and JUnit/Playwright outcomes; not automatically a PASS",
+            "release_approved":False,
+            "synthetic_only":True
+          }
+          pathlib.Path("qa/artifacts/commercial/provenance.json").write_text(json.dumps(data,indent=2)+"\n")
+          PY
+      - name: Recheck source PR identity before publishing evidence
+        if: always() && env.COMM_V1_STAGE != ''
+        id: source_fresh
+        working-directory: qa
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.COMM_V1_SOURCE_READ_TOKEN }}
+          PLAN_ID: ${{ needs.validate.outputs.plan_id }}
+          PR: ${{ needs.validate.outputs.source_pr }}
+          BASE_SHA: ${{ needs.validate.outputs.base_sha }}
+        run: |
+          set -euo pipefail
+          test -n "$GH_TOKEN"
+          REPO='ARG-Digital-Solutions/aronexa-healthcare-platform'
+          current_base="$(gh api "repos/$REPO/pulls/$PR" |
+            python3 scripts/check_commercial_plans.py --source-pr "$PLAN_ID")"
+          test "$current_base" = "$BASE_SHA" || {
+            echo 'Source PR base changed during execution: refuse evidence publication' >&2; exit 1;
+          }
+      - name: Publish JUnit, Playwright screenshots, traces and provenance
+        if: always() && steps.source_fresh.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: comm-v1-${{ needs.validate.outputs.plan_id }}-${{ github.run_id }}
+          path: qa/artifacts/commercial/
+          if-no-files-found: warn
+          retention-days: 14
