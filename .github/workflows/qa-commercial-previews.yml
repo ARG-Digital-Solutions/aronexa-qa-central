@@ -13,6 +13,7 @@ on:
           - COMM_V1_T01
           - COMM_V1_T03
           - COMM_V1_T04
+          - COMM_V1_T06
       app_sha:
         description: 'Exact 40-character source PR head SHA; must match plan and current PR'
         required: true
@@ -70,7 +71,7 @@ jobs:
           test -n "$GH_TOKEN" || { echo 'Read-only source token missing' >&2; exit 1; }
           [[ "$APP_SHA" =~ ^[0-9a-f]{40}$ ]]
           test -z "$REQUEST_ID" || [[ "$REQUEST_ID" =~ ^[0-9]+-[0-9]+$ ]]
-          case "$PLAN_ID" in COMM_V1_T01|COMM_V1_T03|COMM_V1_T04) ;; *) exit 1 ;; esac
+          case "$PLAN_ID" in COMM_V1_T01|COMM_V1_T03|COMM_V1_T04|COMM_V1_T06) ;; *) exit 1 ;; esac
           PLAN="qa/commercial-plans/$PLAN_ID.json"
           test -f "$PLAN"
           test "$(jq -r '.approved_source_sha' "$PLAN")" = "$APP_SHA" || {
@@ -172,6 +173,7 @@ jobs:
             COMM_V1_T01) DIR=dist-consultation ;;
             COMM_V1_T03) DIR=dist-smart-rx ;;
             COMM_V1_T04) DIR=dist-billing ;;
+            COMM_V1_T06) DIR=dist-opd-journey ;;
             *) exit 1 ;;
           esac
           test -s "$DIR/$PREVIEW_PAGE"
