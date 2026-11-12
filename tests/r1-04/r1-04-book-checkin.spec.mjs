@@ -103,7 +103,7 @@ test('R1-04 verified registration -> appointment booking -> check-in',async({pag
   const state=await setup(page);
   await loginRecover(page);
   await bookingForm(page);
-  await expect(page.getByRole('heading',{name:'Saved appointment'})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'Saved appointment',exact:true})).toBeVisible();
   await expect(page.getByRole('region',{name:'Saved appointment'})).toContainText(appointment);
   await expect(page.getByRole('region',{name:'Saved appointment'})).toContainText('BOOKED');
   await page.getByRole('button',{name:'Check in this appointment'}).click();
@@ -119,7 +119,12 @@ test('R1-04 occupied slot stays unconfirmed (no demo fallback)',async({page})=>{
   await loginRecover(page);
   await bookingForm(page);
   await expect(page.getByRole('alert')).toContainText(/slot or appointment state has changed/i);
-  await expect(page.getByRole('heading',{name:'Saved appointment'})).toHaveCount(0);
+  // The page title "Book or reopen a saved appointment" contains the
+  // substring "Saved appointment". Assert absence of the actual result
+  // region, not a partially matching heading.
+  await expect(page.getByRole('region',{name:'Saved appointment',exact:true})).toHaveCount(0);
+  await expect(page.getByText(appointment,{exact:true})).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'Book or reopen a saved appointment',exact:true})).toBeVisible();
   expect(state.bookingCalls()).toBe(1);
 });
 
@@ -128,5 +133,10 @@ test('R1-04 forged patient in booking response is rejected',async({page})=>{
   await loginRecover(page);
   await bookingForm(page);
   await expect(page.getByRole('alert')).toContainText(/appointment could not be verified/i);
-  await expect(page.getByRole('heading',{name:'Saved appointment'})).toHaveCount(0);
+  // The page title "Book or reopen a saved appointment" contains the
+  // substring "Saved appointment". Assert absence of the actual result
+  // region, not a partially matching heading.
+  await expect(page.getByRole('region',{name:'Saved appointment',exact:true})).toHaveCount(0);
+  await expect(page.getByText(appointment,{exact:true})).toHaveCount(0);
+  await expect(page.getByRole('heading',{name:'Book or reopen a saved appointment',exact:true})).toBeVisible();
 });
