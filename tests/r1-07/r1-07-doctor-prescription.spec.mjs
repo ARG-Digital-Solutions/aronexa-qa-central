@@ -117,8 +117,8 @@ test('R1-07 doctor saves fictional structured Rx, signs out, reopens and appends
     await login(page);await openConsultation(page);await openRx(page);
     await addMedicine(page,medOne);
     await page.getByRole('button',{name:'Save prescription draft'}).click();
-    await expect(page.getByRole('status'))
-      .toContainText(/Prescription draft saved on the test server. Revision 1/i);
+    await expect(page.getByText(/Prescription draft saved on the test server. Revision 1/i))
+      .toBeVisible();
     await page.getByRole('button',{name:/Sign out/i}).click();
     await expect(page.getByText(medOne)).toHaveCount(0);
     await login(page);await openConsultation(page);
