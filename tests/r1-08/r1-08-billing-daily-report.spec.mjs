@@ -213,6 +213,5 @@ test('R1-08 tampered branch total is rejected without report rendering',async({p
   await page.getByLabel('Clinic date (Asia/Kolkata)').fill(reportDay);
   await page.getByRole('button',{name:'Load daily report'}).click();
   await expect(page.getByRole('alert')).toContainText(/could not be verified/i);
-  await expect(page.getByRole('region',{name:'Daily collections report'}))
-    .not.toContainText('₹500.00');
+  await expect(page.getByText('Amount billed')).toHaveCount(0);
 });
