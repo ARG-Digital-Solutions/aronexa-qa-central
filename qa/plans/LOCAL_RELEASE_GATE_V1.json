@@ -1,0 +1,28 @@
+{
+  "plan_id": "LOCAL_RELEASE_GATE_V1",
+  "task_id": "ARONEXA-CI-LOCAL-20261112",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "source_branch": "integration/clinic-opd-v1-20261111",
+  "source_sha_requirement": "Full reviewed 40-character commit SHA, clean checkout",
+  "qa_workflow": "scripts/Invoke-AroNexa-LocalVerifiedQA.ps1",
+  "execution": "manual-on-disposable-Windows-VM",
+  "authorized_test_path": "tests/verified",
+  "required_checks": [
+    "synthetic_localhost",
+    "verified_playwright",
+    "zero_browser_failures",
+    "zero_browser_skips",
+    "qa_sha_and_app_sha_evidence"
+  ],
+  "prohibited": [
+    "production_database",
+    "patient_information",
+    "privileged_reporter_token",
+    "automatic_pr_execution",
+    "customer_deployment"
+  ],
+  "test_only": true,
+  "independent_review_required": true,
+  "customer_release_allowed_on_ci_pass": false,
+  "notes": "Manual synthetic browser QA proposal; not replacement for privileged cross-repo QA dispatch or task-specific prior plans."
+}
