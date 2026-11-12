@@ -42,6 +42,15 @@ async function setup(page,{denied=false,notCheckedIn=false,
     }
     const endpoint='/api/v1/branches/'+branch+'/appointments/'+
       appointment+'/consultation-draft';
+    const identityEndpoint='/api/v1/branches/'+branch+'/appointments/'+
+      appointment+'/consultation-context';
+    if(path===identityEndpoint&&method==='GET'){
+      if(denied)return json(403,{code:'APPOINTMENT_DENIED'});
+      if(notCheckedIn)return json(409,{code:'APPOINTMENT_CONFLICT'});
+      return json(200,{tenantId:tenant,branchId:branch,patientId:patient,
+        appointmentId:appointment,doctorMembershipId:doctor,
+        appointmentStage:'CHECKED_IN'});
+    }
     if(path===endpoint&&method==='GET'){
       if(denied)return json(403,{code:'APPOINTMENT_DENIED'});
       if(notCheckedIn)return json(409,{code:'APPOINTMENT_CONFLICT'});
