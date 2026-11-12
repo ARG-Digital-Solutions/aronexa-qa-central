@@ -13,7 +13,19 @@ $checks=[ordered]@{synthetic_localhost='NOT_RUN';verified_playwright='NOT_RUN'}
 $started=[DateTimeOffset]::UtcNow.ToString('o')
 $previousCi=$env:CI
 $previousUrl=$env:ARONEXA_BASE_URL
-function Run([string]$Cmd,[string[]]$Args){& $Cmd @Args;if($LASTEXITCODE -ne 0){throw "$Cmd failed (exit $LASTEXITCODE)"}}
+function Invoke-CheckedCommand {
+  param(
+    [Parameter(Mandatory=$true)][string]$Executable,
+    [Parameter(Mandatory=$true)][string[]]$CommandArguments,
+    [Parameter(Mandatory=$true)][string]$Stage
+  )
+  # Never use a parameter named Args: $args is PowerShell's automatic variable,
+  # and can silently swallow intended splatted native-command arguments.
+  Write-Host "[QA] $Stage : $Executable $($CommandArguments -join ' ')"
+  & $Executable @CommandArguments
+  $exitCode=$LASTEXITCODE
+  if($exitCode -ne 0){throw "$Stage failed: $Executable exited $exitCode"}
+}
 function GitSha([string]$Path){$sha=& git -C $Path rev-parse HEAD;if($LASTEXITCODE -ne 0){throw 'Git rev-parse failed'};return [string]$sha}
 function RequireClean([string]$Path){$dirty=@(& git -C $Path status --porcelain --untracked-files=normal);if($LASTEXITCODE -ne 0 -or ($dirty -join '').Trim()){throw "Dirty checkout $Path"}}
 try {
@@ -37,11 +49,11 @@ try {
   $env:CI='true';$env:ARONEXA_BASE_URL='http://127.0.0.1:5175/'
   $checks['synthetic_localhost']='PASS'
   Push-Location (Join-Path $app 'frontend')
-  try {Run -Cmd 'npm.cmd' -Args @('ci','--no-audit','--no-fund')} finally {Pop-Location}
+  try {Invoke-CheckedCommand -Executable 'npm.cmd' -CommandArguments @('ci','--no-audit','--no-fund') -Stage 'Frontend dependency install'} finally {Pop-Location}
   Push-Location $qaRoot
   try {
-    Run -Cmd 'npm.cmd' -Args @('ci','--no-audit','--no-fund')
-    Run -Cmd 'npx.cmd' -Args @('playwright','install','chromium')
+    Invoke-CheckedCommand -Executable 'npm.cmd' -CommandArguments @('ci','--no-audit','--no-fund') -Stage 'QA Central dependency install'
+    Invoke-CheckedCommand -Executable 'npx.cmd' -CommandArguments @('playwright','install','chromium') -Stage 'Playwright Chromium install'
   } finally {Pop-Location}
   $server=Start-Process -FilePath 'cmd.exe' -ArgumentList @('/d','/s','/c','npm.cmd run dev -- --host 127.0.0.1 --port 5175 --strictPort') -WorkingDirectory (Join-Path $app 'frontend') -PassThru -RedirectStandardOutput (Join-Path $evidence 'vite-out.log') -RedirectStandardError (Join-Path $evidence 'vite-err.log')
   $ready=$false
@@ -53,7 +65,7 @@ try {
   if(-not $ready){throw 'Vite failed to start on localhost 5175'}
   Push-Location $qaRoot
   try {
-    Run -Cmd 'npx.cmd' -Args @('playwright','test','tests/verified','--project','chromium-desktop','--workers=1')
+    Invoke-CheckedCommand -Executable 'npx.cmd' -CommandArguments @('playwright','test','tests/verified','--project','chromium-desktop','--workers=1') -Stage 'Verified Playwright browser tests'
     $path=Join-Path $qaRoot 'artifacts\results.xml'
     if(-not(Test-Path -LiteralPath $path)){throw 'Missing Playwright JUnit XML'}
     [xml]$xml=Get-Content -LiteralPath $path -Raw
