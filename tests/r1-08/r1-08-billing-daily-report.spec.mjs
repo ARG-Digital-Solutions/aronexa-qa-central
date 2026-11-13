@@ -21,7 +21,7 @@ const reportDay='2026-11-13';
 async function setup(page,{noPermission=false,contextDenied=false,
     forgedContext=false,forgedBill=false,creationConflict=false,
     cashConflict=false,booked=false,reportForged=false}={}){
-  let bill=null,payCalls=0,billCalls=0;
+  let bill=null,payCalls=0,billCalls=0,loginCalls=0,meCalls=0;
   await page.route('**/*',async route=>{
     const req=route.request(),url=new URL(req.url()),method=req.method();
     if(url.origin!==base.origin)return route.abort('blockedbyclient');
@@ -29,16 +29,20 @@ async function setup(page,{noPermission=false,contextDenied=false,
     const json=(status,body)=>route.fulfill({
       status,contentType:'application/json',body:JSON.stringify(body),
     });
-    if(path==='/api/v1/auth/login'&&method==='POST')
+    if(path==='/api/v1/auth/login'&&method==='POST'){
+      loginCalls++;
       return json(200,{accessToken:token,tokenType:'Bearer',
         expiresInSeconds:1800,mustChangePassword:false});
-    if(path==='/api/v1/auth/me'&&method==='GET')
+    }
+    if(path==='/api/v1/auth/me'&&method==='GET'){
+      meCalls++;
       return json(200,{tenantId:tenant,userId:id(9),
         membershipId:id(10),username:'billing_demo',
         roles:noPermission?['RECEPTION']:['BILLING'],
         permissions:noPermission?['APPOINTMENT_READ']:
           ['OPD_BILL_READ','OPD_BILL_CREATE','OPD_PAYMENT_POST','OPD_DAILY_REPORT_READ'],
         mustChangePassword:false});
+    }
     if(path==='/api/v1/auth/logout'&&method==='POST')
       return route.fulfill({status:204,body:''});
     const prefix='/api/v1/branches/'+branch+'/appointments/'+appointment;
@@ -89,7 +93,8 @@ async function setup(page,{noPermission=false,contextDenied=false,
   });
   await page.goto(target);
   await expect(page.getByText(/TEST ONLY — FICTIONAL BILLING/)).toBeVisible();
-  return {payments:()=>payCalls,bills:()=>billCalls};
+  return {payments:()=>payCalls,bills:()=>billCalls,
+    logins:()=>loginCalls,meReads:()=>meCalls};
 }
 
 async function login(page){
@@ -121,7 +126,7 @@ test('R1-08 server fee -> OPD bill -> partial cash -> reload -> daily report',as
   await page.getByLabel('Cash amount in rupees (₹)').fill('200');
   await page.getByRole('button',{name:'Record fictional cash'}).click();
   await expect(page.getByText('PARTIAL',{exact:true})).toBeVisible();
-  await expect(page.getByText('₹300.00')).toBeVisible();
+  await expect(page.getByText('₹300.00',{exact:true})).toBeVisible();
   await page.getByLabel('Clinic date (Asia/Kolkata)').fill(reportDay);
   await page.getByRole('button',{name:'Load daily report'}).click();
   await expect(page.getByRole('region',{name:'Daily collections report'}))
@@ -169,7 +174,7 @@ test('R1-08 denied clinic scope hides fee and all payment controls',async({page}
 });
 
 test('R1-08 Reception role cannot open Billing Staff workspace',async({page})=>{
-  await setup(page,{noPermission:true});
+  const state=await setup(page,{noPermission:true});
   await page.getByLabel('Clinic code').fill('test_clinic');
   await page.getByLabel('Billing username').fill('reception_demo');
   await page.getByLabel('Billing password').fill('Fictional-PW!');
@@ -177,7 +182,11 @@ test('R1-08 Reception role cannot open Billing Staff workspace',async({page})=>{
   await page.getByRole('checkbox',
     {name:/disposable fictional clinic with no real billing/i}).check();
   await page.getByRole('button',{name:'Sign in to billing'}).click();
-  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(page.getByRole('alert')).toContainText(/not authorized/i);
+  // A rejected branch-format check must never count as a role-security PASS:
+  // prove the simulated /auth/login and /auth/me handshakes actually ran.
+  expect(state.logins()).toBe(1);
+  expect(state.meReads()).toBe(1);
   await expect(page.getByRole('button',{name:'Create OPD bill'})).toHaveCount(0);
 });
 
