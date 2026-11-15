@@ -4,7 +4,7 @@
   "plan_id": "WIN11P_RECEPTION_E2E",
   "source_pr": 148,
   "qa_pr": 37,
-  "source_head": "407d9f2521ef3322d7652870cd876f049d8a38c2",
+  "source_head": "ce0ed7b56d8293a0f74421974b459e6c420969c5",
   "source_baseline_sha": "1abb41ba76acef072001336d8b86d4a0d29ac6a2",
   "local_tested_code_sha": "ce7fbbc0b7d6658e5c4f9a252dec98dfa5df5ef5",
   "previous_plan_source_sha": "89c985dfd9c1b8cb456e07bc1e6516785c038604",
@@ -163,7 +163,7 @@
       "category": "documentation-or-sanitized-evidence",
       "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "1c810b60533e4729270a31ce4d71a5751a4c9c1e",
+      "head_blob": "7b4d9702324cac7411574ebc15b67e0cc9c55d6f",
       "owner_scope_authorized": true,
       "independent_review": "NOT_REVIEWED"
     },
@@ -280,7 +280,7 @@
       "category": "test-orchestration",
       "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "e5dace5c3529ddf2bad0685c2e9faef74a674944",
+      "head_blob": "5e45131f76ea7d2572ed3c3e1de221b9837bfe02",
       "owner_scope_authorized": true,
       "independent_review": "NOT_REVIEWED"
     },
@@ -289,7 +289,7 @@
       "category": "test-orchestration",
       "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "df23a04d0bf32cc675a811543c61d8177a30696c",
+      "head_blob": "925a0ead75e2d691d0ca04c0e7d72acc23e3ad38",
       "owner_scope_authorized": true,
       "independent_review": "NOT_REVIEWED"
     },
@@ -533,7 +533,7 @@
     "admin_runner_environment_exact_qa_pins_and_credentials_authorization_pending"
   ],
   "engineering_verification": {
-    "product_sha": "407d9f2521ef3322d7652870cd876f049d8a38c2",
+    "product_sha": "ce0ed7b56d8293a0f74421974b459e6c420969c5",
     "qa_unit_tests": 66,
     "qa_failures": 0,
     "qa_errors": 0,
@@ -544,6 +544,8 @@
     "pg17_owned_resource_smoke": "PASS",
     "independent_human_signoff": false,
     "central_qa": "NOT_RUN",
-    "full_verification": "NOT_PASS"
+    "full_verification": "NOT_PASS",
+    "genuine_surefire_parser_regression": "CLR accessor regression and replay of41genuine reports PASS; initial attribute-shadow failure retained",
+    "linux_profile_acceptance": "NOT_INDEPENDENT_WINDOWS_ACCEPTANCE"
   }
 }

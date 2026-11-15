@@ -12,4 +12,6 @@ Runner configuration/activation is blocked by actual GitHubadmin403 capabilities
 
 No independent Central PASS, humanreceipt, runnerenrollment, credentialchange, originaldatabaseaccess, merge, customerdeployment or commercialrelease occurred. Rule27 HOLD / WIN-11B NOT_READY remains. Exact finalSHAs and Linux diagnostic exits/counts/failures are recorded in the PR/issue update after immutable verification.
 
-Product correction published in existing draft PR148 at 407d9f2521ef3322d7652870cd876f049d8a38c2. Independent acceptance remains pending.
+Product correction published in existing draft PR148 at ce0ed7b56d8293a0f74421974b459e6c420969c5. Independent acceptance remains pending.
+
+Final real-report replay exposed XML attribute shadowing in PowerShell: all41 genuine reports were initially rejected. CLR element accessors and authentic Surefire/attribute-shadow/namespace regressions corrected it; replay now parses344 unique PASS with0 issues and exactly8 guarded methods absent. The failure is retained. Fresh exact-head Linux profile results are recorded in issue38 after the correction.

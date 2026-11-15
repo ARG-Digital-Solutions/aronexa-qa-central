@@ -7,8 +7,8 @@
   "source_base_branch": "codex/win11p-integrated-reception-e2e",
   "source_baseline_sha": "1abb41ba76acef072001336d8b86d4a0d29ac6a2",
   "source_branch": "codex/issue146-persistent-windows-e2e",
-  "source_expected_head_sha": "407d9f2521ef3322d7652870cd876f049d8a38c2",
-  "frozen_frontend_sha": "407d9f2521ef3322d7652870cd876f049d8a38c2",
+  "source_expected_head_sha": "ce0ed7b56d8293a0f74421974b459e6c420969c5",
+  "frozen_frontend_sha": "ce0ed7b56d8293a0f74421974b459e6c420969c5",
   "authorized_changed_paths": [
     "backend/pom.xml",
     "backend/src/test/java/com/argdigital/aronexa/appointment/AppointmentCandidateHttpAcceptanceTests.java",
