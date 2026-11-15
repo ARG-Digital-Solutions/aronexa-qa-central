@@ -1,0 +1,3 @@
+self-hosted-runner:
+  labels:
+    - aronexa-win11p-ephemeral

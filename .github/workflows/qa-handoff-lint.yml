@@ -18,6 +18,8 @@ jobs:
           persist-credentials: false
       - name: Reject incomplete or unsafe QA plan declarations
         run: python3 scripts/check_qa_plans.py
+      - name: Unit-test fail-closed manual WIN11P contracts
+        run: python3 -m unittest discover -s scripts/tests -v
       - uses: actions/setup-go@v5
         with:
           go-version: '1.24'
@@ -26,4 +28,5 @@ jobs:
           go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.7 -shellcheck= \
             .github/workflows/qa-cross-repo-handoff.yml \
             .github/workflows/qa-int-reg01.yml \
-            .github/workflows/qa-handoff-lint.yml
+            .github/workflows/qa-handoff-lint.yml \
+            .github/workflows/qa-win11p-reception.yml
