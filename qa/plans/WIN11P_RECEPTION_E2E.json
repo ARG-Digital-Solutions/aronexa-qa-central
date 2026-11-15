@@ -1,0 +1,26 @@
+{
+  "plan_id": "WIN11P_RECEPTION_E2E",
+  "task_id": "WIN-11P-INTEGRATED-RECEPTION-E2E",
+  "status": "DRAFT_NOT_ACTIVATED",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "source_base_branch": "feature/win11p-portable-java-bootstrap-20261115",
+  "source_baseline_sha": "112f106131499a1c47f20bdb8c1f66ab2353b4d3",
+  "source_branch": "codex/win11p-integrated-reception-e2e",
+  "qa_workflow": null,
+  "local_runner": "scripts/windows-runtime/Start-AroNexa-WIN11P-Reception-QA.ps1",
+  "required_checks": [
+    "exact_source_sha_and_clean_checkout",
+    "portable_java21_actual_forked_jvm_identity",
+    "frontend_model_regression_and_connected_build",
+    "real_http_pg17_tenant_branch_staff_session_rls_negatives",
+    "chromium_login_search_registration_booking_checkin_daily_queue",
+    "same_marked_database_distinct_backend_process_restart",
+    "operator_workflow_on_connected_frontend",
+    "full_maven_failures_preserved"
+  ],
+  "test_only": true,
+  "independent_review_required": true,
+  "customer_release_allowed_on_ci_pass": false,
+  "disposition": "NOT_RUN",
+  "notes": "Draft registration only. No allowlist or workflow activation, dispatch, commit-status PASS, merge or independent disposition. Existing local pilot runners are reused as components, not another task's Central QA plan. Operator lab is temporary and separate from automated restart evidence. Named existing Windows database and normal portable backend runtime integration remain unimplemented."
+}
