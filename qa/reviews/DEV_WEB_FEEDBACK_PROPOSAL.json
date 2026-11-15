@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "document_kind": "DEVELOPMENT_FEEDBACK_QA_PROPOSAL_NOT_ACTIVATION",
+  "proposal_id": "DEV_WEB_FEEDBACK",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "source_expected_head_sha": "285bbde99496a84a08a32f35a1e9d32f598146a0",
+  "source_baseline_sha": "ce0ed7b56d8293a0f74421974b459e6c420969c5",
+  "source_branch": "codex/web-first-feedback",
+  "proposed_changed_paths": [
+    ".gitignore",
+    "docs/FEATURE_INVENTORY.csv",
+    "docs/INTEGRATION_MAP.csv",
+    "docs/WEB_FIRST_DELIVERY.md",
+    "docs/superpowers/plans/2026-11-16-web-first-feedback.md",
+    "scripts/Start-AroNexa-WebLab.ps1",
+    "scripts/Stop-AroNexa-WebLab.ps1",
+    "scripts/Test-AroNexa-Feature.ps1",
+    "scripts/WebLab.psm1",
+    "scripts/tests/Test-WebLab.ps1",
+    "scripts/tests/test_web_lab_source_drift.py"
+  ],
+  "head_blobs": {
+    ".gitignore": "31b736b758e8da44c4e1916379c52157a3240e06",
+    "docs/FEATURE_INVENTORY.csv": "46203dee9c32ce11ba32900bdc51d6ac4afcefa9",
+    "docs/INTEGRATION_MAP.csv": "0545bd1c3b6d0920e3f5af2c4a2553a8db8afa7b",
+    "docs/WEB_FIRST_DELIVERY.md": "170cede0bd4546dd240f08d9b99c8969a2e14c1a",
+    "docs/superpowers/plans/2026-11-16-web-first-feedback.md": "5504c6f0f7490a4fd61aecea05c29e81e46edf99",
+    "scripts/Start-AroNexa-WebLab.ps1": "b7c3a92e8701bf6048a31d0b6db644b430ebe63e",
+    "scripts/Stop-AroNexa-WebLab.ps1": "957eed283a7de966b00abb7c6c7b883df452deec",
+    "scripts/Test-AroNexa-Feature.ps1": "2308bd04587aecc165c842fa1d83d5fcae81cdea",
+    "scripts/WebLab.psm1": "b078f83cd257761482871803da35f5e2d309aae9",
+    "scripts/tests/Test-WebLab.ps1": "839e1d17ce71525eed58c0eb2539d0de3104cfb4",
+    "scripts/tests/test_web_lab_source_drift.py": "362fa4cc9c89644ed7d46b07dfd92803d8da81ed"
+  },
+  "qa_workflow": null,
+  "execution_authorized": false,
+  "owner_authorized_routine_local_feedback": true,
+  "independent_review": "NOT_REVIEWED",
+  "central_acceptance": "NOT_RUN",
+  "classification": "NOT_READY",
+  "existing_WIN11P_plan_changed": false,
+  "existing_INT_REG01_plan_changed": false,
+  "governance_amendment": {
+    "id": "GOV_WEB_01",
+    "status": "PROPOSED_NOT_APPROVED",
+    "changes_applied": false
+  },
+  "local_test_selection": {
+    "command": "scripts/Test-AroNexa-Feature.ps1 -Flow Reception -Level Developer|Feature -ExpectedCommit <exact> -ReportDirectory <new-private-directory>",
+    "frontend_files": 9,
+    "http_classes": [
+      "RegistrationCandidateHttpAcceptanceTests",
+      "PatientCandidateSearchHttpAcceptanceTests",
+      "AppointmentCandidateHttpAcceptanceTests"
+    ],
+    "profiles": [
+      "win11p-discovery",
+      "win11p-ordinary"
+    ],
+    "mandatory_acceptance_substitution": false,
+    "browser_journey": "NOT_RUN",
+    "guarded_methods": "NOT_RUN"
+  },
+  "required_future_acceptance": [
+    "real production-intended registration writer/migration/key review",
+    "runtime browser Reception flow",
+    "all mandatory source-specific security and persistence checks",
+    "existing exact-SHA Central handoff and required independent clinical/security dispositions",
+    "Windows offline/installer/licensing/printing/encrypted recovery/upgrade acceptance",
+    "explicit customer release approval"
+  ],
+  "notes": "Registration candidate and nested appointment controllers remain TEST ONLY. Source code reuses existing lab, not a new demo. No QA registry/workflow activation or governance change is performed. Known aliases of the same owner are not independent reviewers."
+}

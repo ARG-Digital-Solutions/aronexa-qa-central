@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "document_kind": "REGISTRATION_RUNTIME_QA_REVIEW_PROPOSAL_NOT_ACTIVATION",
+  "proposal_id": "DEV_REGISTRATION_RUNTIME",
+  "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
+  "source_pr_number": 149,
+  "source_branch": "codex/web-first-feedback",
+  "source_expected_head_sha": "bd3fc7b49ffb168b0d8c08f64ff10b3a7c691879",
+  "source_baseline_sha": "ce0ed7b56d8293a0f74421974b459e6c420969c5",
+  "proposed_changed_paths": [
+    ".gitignore",
+    "backend/src/main/java/com/argdigital/aronexa/auth/AuthSecurityConfiguration.java",
+    "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationAdmissionConfiguration.java",
+    "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationAttemptLimiter.java",
+    "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationBodyLimitFilter.java",
+    "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationHttpController.java",
+    "backend/src/main/java/com/argdigital/aronexa/patient/SyntheticRegistrationAttemptLimiter.java",
+    "backend/src/main/java/com/argdigital/aronexa/patient/SyntheticRegistrationBodyLimitFilter.java",
+    "backend/src/test/java/com/argdigital/aronexa/patient/RegistrationRuntimeBoundaryTests.java",
+    "backend/src/test/java/com/argdigital/aronexa/patient/RegistrationRuntimeHttpAcceptanceTests.java",
+    "docs/FEATURE_INVENTORY.csv",
+    "docs/INTEGRATION_MAP.csv",
+    "docs/REGISTRATION_RUNTIME_BOUNDARY.md",
+    "docs/WEB_FIRST_DELIVERY.md",
+    "docs/phases/OPD_V1_PERSISTENT_JOURNEY_CONTRACT.md",
+    "docs/superpowers/plans/2026-11-16-registration-runtime-boundary.md",
+    "docs/superpowers/plans/2026-11-16-web-first-feedback.md",
+    "scripts/Start-AroNexa-WebLab.ps1",
+    "scripts/Stop-AroNexa-WebLab.ps1",
+    "scripts/Test-AroNexa-Feature.ps1",
+    "scripts/WebLab.psm1",
+    "scripts/tests/Test-WebLab.ps1",
+    "scripts/tests/test_web_lab_source_drift.py"
+  ],
+  "head_blobs": {
+    ".gitignore": "31b736b758e8da44c4e1916379c52157a3240e06",
+    "backend/src/main/java/com/argdigital/aronexa/auth/AuthSecurityConfiguration.java": "d59b6e1a6feb23a0974aabec6c2b4b01fd06d134",
+    "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationAdmissionConfiguration.java": "62b53633c9bd9a077846202fdbd893b60b59d4ce",
+    "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationAttemptLimiter.java": "1815d3bfd392799d69dbde02d63c9bacb139a285",
+    "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationBodyLimitFilter.java": "1d3409c318eeb13afbc61dd65af41f8f33ededdb",
+    "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationHttpController.java": "2136181eaca5aa33fa28b6df0edb7e8ebf128619",
+    "backend/src/main/java/com/argdigital/aronexa/patient/SyntheticRegistrationAttemptLimiter.java": "bd3fb39364e856491f36ae207354c73e07e02d9b",
+    "backend/src/main/java/com/argdigital/aronexa/patient/SyntheticRegistrationBodyLimitFilter.java": "a2391aec18a7b1f90ae3efaf65dff3e3b8539d9e",
+    "backend/src/test/java/com/argdigital/aronexa/patient/RegistrationRuntimeBoundaryTests.java": "4b230c156df0d7e8fb7f4153fb6e59e0f76194d0",
+    "backend/src/test/java/com/argdigital/aronexa/patient/RegistrationRuntimeHttpAcceptanceTests.java": "434ec48331f7ed369d39c8d27f38cd3d02c74144",
+    "docs/FEATURE_INVENTORY.csv": "46203dee9c32ce11ba32900bdc51d6ac4afcefa9",
+    "docs/INTEGRATION_MAP.csv": "0545bd1c3b6d0920e3f5af2c4a2553a8db8afa7b",
+    "docs/REGISTRATION_RUNTIME_BOUNDARY.md": "cd702f516e8d1167661af6e623878160fb82235f",
+    "docs/WEB_FIRST_DELIVERY.md": "170cede0bd4546dd240f08d9b99c8969a2e14c1a",
+    "docs/phases/OPD_V1_PERSISTENT_JOURNEY_CONTRACT.md": "a19d99c7bb713753a9f947f8834fa59d88cb3b9c",
+    "docs/superpowers/plans/2026-11-16-registration-runtime-boundary.md": "29e50c3998e416f8a2d52f1d08dbd2b7fa42c8a8",
+    "docs/superpowers/plans/2026-11-16-web-first-feedback.md": "5504c6f0f7490a4fd61aecea05c29e81e46edf99",
+    "scripts/Start-AroNexa-WebLab.ps1": "b7c3a92e8701bf6048a31d0b6db644b430ebe63e",
+    "scripts/Stop-AroNexa-WebLab.ps1": "957eed283a7de966b00abb7c6c7b883df452deec",
+    "scripts/Test-AroNexa-Feature.ps1": "2308bd04587aecc165c842fa1d83d5fcae81cdea",
+    "scripts/WebLab.psm1": "b078f83cd257761482871803da35f5e2d309aae9",
+    "scripts/tests/Test-WebLab.ps1": "839e1d17ce71525eed58c0eb2539d0de3104cfb4",
+    "scripts/tests/test_web_lab_source_drift.py": "362fa4cc9c89644ed7d46b07dfd92803d8da81ed"
+  },
+  "bounded_increment": {
+    "baseline_sha": "285bbde99496a84a08a32f35a1e9d32f598146a0",
+    "changed_paths": [
+      "backend/src/main/java/com/argdigital/aronexa/auth/AuthSecurityConfiguration.java",
+      "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationAdmissionConfiguration.java",
+      "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationAttemptLimiter.java",
+      "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationBodyLimitFilter.java",
+      "backend/src/main/java/com/argdigital/aronexa/patient/RegistrationHttpController.java",
+      "backend/src/main/java/com/argdigital/aronexa/patient/SyntheticRegistrationAttemptLimiter.java",
+      "backend/src/main/java/com/argdigital/aronexa/patient/SyntheticRegistrationBodyLimitFilter.java",
+      "backend/src/test/java/com/argdigital/aronexa/patient/RegistrationRuntimeBoundaryTests.java",
+      "backend/src/test/java/com/argdigital/aronexa/patient/RegistrationRuntimeHttpAcceptanceTests.java",
+      "docs/REGISTRATION_RUNTIME_BOUNDARY.md",
+      "docs/phases/OPD_V1_PERSISTENT_JOURNEY_CONTRACT.md",
+      "docs/superpowers/plans/2026-11-16-registration-runtime-boundary.md"
+    ],
+    "changed_path_count": 12
+  },
+  "qa_workflow": null,
+  "execution_authorized": false,
+  "owner_authorized_routine_local_feedback": true,
+  "existing_WIN11P_plan_changed": false,
+  "existing_INT_REG01_plan_changed": false,
+  "execution_allowlist_changed": false,
+  "independent_human_review": "NOT_IDENTIFIED",
+  "ai_review": "SEPARATE_AI_CODE_REVIEW_NO_FURTHER_MATERIAL_FINDING_NOT_HUMAN_SIGNOFF",
+  "central_acceptance": "NOT_RUN",
+  "overall_acceptance": "NOT_PASS",
+  "classification": "NOT_READY",
+  "inventory": {
+    "previous_count": 352,
+    "current_count": 369,
+    "removed_methods": [],
+    "changed_existing_tags": [],
+    "new_methods": [
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeBoundaryTests#absentOrFalseActivationCreatesNoHttpController",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeBoundaryTests#explicitActivationWithoutWriterIs503AfterPermissionAndModuleChecks",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeBoundaryTests#permissionAndForcedPasswordChangeDenyBeforeMissingWriter",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeBoundaryTests#syntheticProfilesDoNotCreateASecondRegistrationController",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#anonymousWrongRoleOtherBranchAndOtherTenantCannotWrite",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#authenticatedMalformedAttemptsExhaustActorBudgetBeforeJsonParsing",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#changedIdempotencyPayloadAndDuplicateIdentityReturnConflictWithoutExtraRows",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#concurrentSameKeyHttpRequestsCommitOnlyOneIdentityAndAudit",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#encodedRouteCharactersStillCannotBypassTheStreamedBodyLimit",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#exactStreamedBodyCapRejectsBothLengthAndChunkedOverflowWithoutWrites",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#existingSqlRoleHasNoDirectIdentityWriteOrSigningKeyRead",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#forcedPasswordChangeAfterLoginDeniesWriteWithoutPartialRows",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#invalidJsonMissingIdempotencyAndInvalidIntakeNeverReachPersistence",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#liveSessionModulePermissionAndBranchRevocationsFailClosed",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#mainSourceHttpWriterCommitsAndReplaysOneDurableRegistration",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#onlyTheMainSourceControllerHandlesRegistrationPosts",
+        "tags": []
+      },
+      {
+        "id": "com.argdigital.aronexa.patient.RegistrationRuntimeHttpAcceptanceTests#tenantBudgetCannotBeBypassedBySwitchingAuthenticatedStaffMembers",
+        "tags": []
+      }
+    ],
+    "ordinary_count": 360,
+    "discovery_count": 1,
+    "guarded_count": 8,
+    "guarded_result": "NOT_RUN"
+  },
+  "retained_plan_rejection": {
+    "plan": "WIN11P_RECEPTION_E2E",
+    "source_head_matches": false,
+    "actual_changed_paths_from_its_baseline": 49,
+    "allowlisted_paths": 26,
+    "result": "REJECTED",
+    "reason": "source scope mismatch"
+  },
+  "local_results": {
+    "focused_precommit": {
+      "tests": 22,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "exit": 0,
+      "seconds": 35.493
+    },
+    "exact_frontend": {
+      "tests": 249,
+      "failures": 0,
+      "skips": 0,
+      "exit": 0
+    },
+    "exact_discovery": {
+      "tests": 1,
+      "exit": 0
+    },
+    "exact_ordinary": {
+      "tests": 360,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "maven_exit": 0,
+      "elapsed": "04:35 min",
+      "assertions": "PASS",
+      "run_verdict": "NOT_PASS_LIFECYCLE_DIAGNOSTICS",
+      "hikari_closed_connection_warnings": 136,
+      "surefire_fork_shutdown_errors": 1
+    }
+  },
+  "evidence_digests": {
+    "inventory-comparison.json": "7bcb7065ed45c8fb7d3c803ecef6a200714fd903ed7b0554ce61dbfc21bd6416",
+    "green-runtime-all.log": "8139f5dfdbfd0cd489baa9736cd44bf0330d6505d17d5371f87067dd668ca1b9",
+    "final-discovery.log": "db25fc34c5e05bf0d1e2877cb1906c425065f8360f82ff104a182208c3663c32",
+    "final-frontend.log": "c8673fd15c23aac65cbe27dc6a19ee88491a327a7d02ef8e0a8c8849dd21dc46",
+    "review.md": "b2642f18bd2e4d71a7df204cd5310b145aa1752e3ddc55d6b95f7d0b222d8a83",
+    "final-ordinary.log": "55cc55172a4ad58828b5b2eeda590d06e625a897dd5c6148721c6e80af146575",
+    "final-matrix-summary.json": "51486072c7a19e669158b7b38525e698f775679871908f13fea2b2331d07aec1",
+    "final-lifecycle-summary.json": "dcc6c5f3c29a69986e0c5fb2a5fb8fd2a8979dd614f1822a6e4ee41753553c64",
+    "final-shutdown-thread-dump.txt": "da8d88745ca95e69957fcc82db0b651a05bdb4d1a5b21c2f00da358645cc62d8",
+    "final-scope-review.json": "682d23114dbbbe48f6be94caf8eecf28aa8b2349d78cd69bcac4ed3481d1b475",
+    "final-inventory.json": "d8c889ae064100af199e0df0ff229fed32c8c52f5afc9a3abfe20b47a0f1bd26"
+  },
+  "raw_evidence_publication": false,
+  "pending": [
+    "Resolve retained Spring-context/Testcontainers lifecycle; full-run shutdownERROR and136closed-connectionwarnings persist; no diagnostics/timeouts weakened",
+    "Exact-source independent QA scope and workflow review; no existing allowlist promotion",
+    "Immutable V10 checksum/approval and installer rehearsal; no production migration performed",
+    "Protected per-installation key loader/provisioning/rotation and safe least-privilege runtime readiness gate",
+    "Genuine encrypted recovery; unencrypted restore never substitutes",
+    "Administrator verification of protected environments, ephemeral Windows runner, least-privilege credentials; prior403 remainsUNKNOWN",
+    "Qualified independent human reviewer/operator; both known GitHub usernames are same owner",
+    "All eight guarded methods and real Windows/browser acceptance",
+    "Exact-source Central QA disposition under AGENTS.md rule27; no stale green reuse"
+  ],
+  "notes": "Proposal outside qa/plans and workflow registry. The main HTTP adapter is default-off and has no main-source writer factory or key loader. Optional executor is supplied only in disposable PG17 tests. Flag alone returns503 after authorization/module checks. Existing web feedback proposal remains historical at285bbde. No clinical endpoint activation, original database access, workflow activation, merge or deployment.",
+  "matrix": {
+    "inventory_count": 369,
+    "executed": 361,
+    "report_issues": [],
+    "other_matrix_issues": [],
+    "overall": "NOT_PASS",
+    "guarded_result": "NOT_RUN",
+    "missing_guarded_methods": [
+      "com.argdigital.aronexa.appointment.Pilot05SeparateJvmHttpTests#phaseARc03BrowserCreatesRegistrationBookingAndCheckIn",
+      "com.argdigital.aronexa.appointment.Pilot05SeparateJvmHttpTests#phaseBReopensSameConsultationInDifferentJvm",
+      "com.argdigital.aronexa.appointment.Pilot05SeparateJvmHttpTests#pilot09OperatorAssistedWindowsFictionalLab",
+      "com.argdigital.aronexa.appointment.AppointmentCandidateHttpAcceptanceTests#pilot07NonemptyDisposablePostgresSnapshotRestoresToFreshDatabase",
+      "com.argdigital.aronexa.appointment.AppointmentCandidateHttpAcceptanceTests#pilot07OperatorInteractiveDisposableWindowsClinicLab",
+      "com.argdigital.aronexa.appointment.Pilot05SeparateJvmHttpTests#phaseBRc03RecoversBrowserCreatedPatientAndCheckedInQueue",
+      "com.argdigital.aronexa.appointment.AppointmentCandidateHttpAcceptanceTests#pilot06BrowserIntegratedRealHttpAcrossThreeStaffRoles",
+      "com.argdigital.aronexa.appointment.Pilot05SeparateJvmHttpTests#phaseAWritesCheckedInConsultationAndStopsJvm"
+    ]
+  },
+  "lifecycle_diagnosis": {
+    "source_sha": "bd3fc7b49ffb168b0d8c08f64ff10b3a7c691879",
+    "maven_exit": 0,
+    "junit_tests": 360,
+    "junit_failures": 0,
+    "junit_errors": 0,
+    "junit_skips": 0,
+    "hikari_closed_connection_warnings": 136,
+    "surefire_fork_shutdown_errors": 1,
+    "pool_shutdown_started": 32,
+    "pool_shutdown_completed": 31,
+    "shutdown_hook_wait_in_hikari": true,
+    "connection_adder_threads": 27,
+    "retry_sleeping_adders": 27,
+    "elapsed": "04:35 min",
+    "runtime_verdict": "NOT_PASS_LIFECYCLE_DIAGNOSTICS",
+    "root_cause_status": "STALL_LOCATION_CONFIRMED_RETAINED_CONTEXT_STOPPED_DATABASE_HYPOTHESIS_NOT_YET_REPAIRED"
+  }
+}
