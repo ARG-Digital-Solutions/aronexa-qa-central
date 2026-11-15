@@ -1,13 +1,41 @@
 {
   "plan_id": "WIN11P_RECEPTION_E2E",
-  "task_id": "WIN-11P-INTEGRATED-RECEPTION-E2E",
+  "task_id": "WIN-11P-C-WIN-11B-ISSUE-146",
   "status": "DRAFT_NOT_ACTIVATED",
   "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
-  "source_base_branch": "feature/win11p-portable-java-bootstrap-20261115",
-  "source_baseline_sha": "112f106131499a1c47f20bdb8c1f66ab2353b4d3",
-  "source_branch": "codex/win11p-integrated-reception-e2e",
+  "source_pr_number": 148,
+  "source_base_branch": "codex/win11p-integrated-reception-e2e",
+  "source_baseline_sha": "1abb41ba76acef072001336d8b86d4a0d29ac6a2",
+  "source_branch": "codex/issue146-persistent-windows-e2e",
+  "source_expected_head_sha": "89c985dfd9c1b8cb456e07bc1e6516785c038604",
+  "frozen_frontend_sha": "89c985dfd9c1b8cb456e07bc1e6516785c038604",
+  "authorized_changed_paths": [
+    "backend/src/test/java/com/argdigital/aronexa/appointment/Pilot05SeparateJvmHttpTests.java",
+    "backend/src/test/java/com/argdigital/aronexa/patient/PatientCandidateSearchHttpAcceptanceTests.java",
+    "docs/windows/WIN11P_146_ALTERNATE_PORT_PROPOSAL_20261115.md",
+    "docs/windows/WIN11P_146_FICTIONAL_DATA_ACCEPTANCE_20261115.md",
+    "docs/windows/WIN11P_146_LOCAL_PREFLIGHT_20261115.md",
+    "docs/windows/WIN11P_146_PORT5186_ACCEPTANCE_20261115.md",
+    "frontend/test/browser/pilot06-preview-readiness.mjs",
+    "frontend/test/browser/pilot08-rc03-created-restart.mjs",
+    "frontend/test/browser/rc03-preview-port.ts",
+    "frontend/test/patient-candidate-search-client.test.mjs",
+    "frontend/test/rc03-preview-port.test.mjs",
+    "frontend/vite.connected-reception.config.ts",
+    "scripts/pilot/Test-AroNexa-Pilot05-DistinctJvm-Restart.ps1"
+  ],
   "qa_workflow": null,
-  "local_runner": "scripts/windows-runtime/Start-AroNexa-WIN11P-Reception-QA.ps1",
+  "proposed_qa_workflow": "qa-win11p-reception.yml",
+  "qa_issue_number": 38,
+  "local_runner": "scripts/pilot/Test-AroNexa-Pilot05-DistinctJvm-Restart.ps1",
+  "local_runner_arguments": [
+    "-Rc03",
+    "-PreviewPort",
+    "5186"
+  ],
+  "default_preview_port": 5176,
+  "approved_alternate_preview_port": 5186,
+  "portable_qa_wrapper": "scripts/windows-runtime/Start-AroNexa-WIN11P-Reception-QA.ps1",
   "required_checks": [
     "exact_source_sha_and_clean_checkout",
     "portable_java21_actual_forked_jvm_identity",
@@ -18,9 +46,69 @@
     "operator_workflow_on_connected_frontend",
     "full_maven_failures_preserved"
   ],
+  "source_coupled_test_selection": {
+    "frontend_commands": [
+      "npm.cmd --prefix frontend ci --no-audit --no-fund",
+      "npm.cmd --prefix frontend test",
+      "npm.cmd --prefix frontend run build:connected:test"
+    ],
+    "backend_search_class": "com.argdigital.aronexa.patient.PatientCandidateSearchHttpAcceptanceTests",
+    "backend_search_expected_tests": 7,
+    "rc03_phase_a": "com.argdigital.aronexa.appointment.Pilot05SeparateJvmHttpTests#phaseARc03BrowserCreatesRegistrationBookingAndCheckIn",
+    "rc03_phase_b": "com.argdigital.aronexa.appointment.Pilot05SeparateJvmHttpTests#phaseBRc03RecoversBrowserCreatedPatientAndCheckedInQueue",
+    "rc03_tests_per_phase": 1,
+    "frontend_minimum_tests": 249,
+    "failures_allowed": 0,
+    "errors_allowed": 0,
+    "skips_allowed": 0
+  },
+  "owner_acknowledged_local_evidence": {
+    "source_sha": "bce7a9d501f764b7ba9386225d96ba5f7b89c3aa",
+    "evidence_commit_sha": "89c985dfd9c1b8cb456e07bc1e6516785c038604",
+    "evidence_path": "docs/windows/WIN11P_146_FICTIONAL_DATA_ACCEPTANCE_20261115.md",
+    "frontend_passed": 249,
+    "backend_search_passed": 7,
+    "rc03_passed": 2,
+    "process_a": 28052,
+    "process_b": 6036,
+    "run_id": "94073082-abb3-4ed8-8593-8b415eb87e32",
+    "disposition": "OWNER_ACKNOWLEDGED_LOCAL_PASS_NOT_INDEPENDENT_QA",
+    "independent_head_rerun_required": true
+  },
+  "unverified_required_checks": [
+    "portable_java21_actual_forked_jvm_identity",
+    "operator_workflow_on_connected_frontend"
+  ],
+  "reviewer": {
+    "github_login": null,
+    "independent": true,
+    "disposition": "NOT_REVIEWED",
+    "reviewed_qa_sha": null,
+    "reviewed_source_sha": null
+  },
+  "reporting": {
+    "status_context": "aronexa/central-qa/WIN11P_RECEPTION_E2E",
+    "unique_request_required": true,
+    "current_pr_head_required": true,
+    "qa_workflow_sha_required": true,
+    "executed_counts_and_artifact_hashes_required": true,
+    "independent_disposition_required": true,
+    "source_read_secret": "ARONEXA_SOURCE_READ_TOKEN",
+    "isolated_reporter_secret": "ARONEXA_DEV_STATUS_TOKEN",
+    "raw_credentials_or_phi_artifacts_allowed": false
+  },
+  "activation_blockers": [
+    "dedicated_reviewed_workflow_absent",
+    "validator_and_controller_allowlist_and_job_contract_support_absent",
+    "approved_ephemeral_windows_runner_with_linux_postgresql17_docker_not_selected",
+    "independent_reviewer_not_assigned",
+    "source_pr_draft_dispatch_deferred_and_plan_label_absent",
+    "independent_current_head_run_and_disposition_absent",
+    "portable_jvm_identity_and_operator_checks_not_established"
+  ],
   "test_only": true,
   "independent_review_required": true,
   "customer_release_allowed_on_ci_pass": false,
   "disposition": "NOT_RUN",
-  "notes": "Draft registration only. No allowlist or workflow activation, dispatch, commit-status PASS, merge or independent disposition. Existing local pilot runners are reused as components, not another task's Central QA plan. Operator lab is temporary and separate from automated restart evidence. Named existing Windows database and normal portable backend runtime integration remain unimplemented."
+  "notes": "Metadata correction for review only. All eight original required checks are retained. No validator/controller/workflow, token permission, draft dispatch policy or release gate is changed. Local test-only adapters prove no production runtime functionality. Do not dispatch INT-REG01 as a substitute, accept an ancestor SHA as current-head PASS, publish raw Spring/Surefire credentials, or continue gated WIN-11B without independent exact-SHA evidence and disposition."
 }
