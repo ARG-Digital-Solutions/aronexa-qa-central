@@ -1,6 +1,6 @@
 # AroNexa QA Central — agent operating rules
 
-Scope: independent QA repository. This file applies only after this reviewed PR is merged. Product Master Engineering Contract V3.0 remains authoritative for engineering scope.
+Scope: centralized QA repository. This file applies only after this reviewed PR is merged; current explicit owner instructions still govern the authorized task. Product Master Engineering Contract V3.0 remains authoritative for engineering scope.
 
 1. All new AroNexa QA planning, browser/API/security/accessibility test harnesses, evidence and independent QA decisions live here. Tests that must compile beside application source remain in the product repository, but are orchestrated and evidenced from here.
 2. Start every new QA task by inspecting the current approved `qa/plans/<PLAN_ID>.json`, source product PR and current exact SHA, relevant requirement IDs, approved source scopes and dependency holds. Unknown plan IDs **fail closed**; never guess an alternative test suite.
@@ -11,5 +11,10 @@ Scope: independent QA repository. This file applies only after this reviewed PR 
 7. Privileged product commit-status publishing belongs only in the isolated QA reporter job; never pass reporting tokens into app source checkouts, Maven, npm or browser tests. Never change workflow permissions or trusted event type silently.
 8. Post an exact-SHA PR status and issue receipt only after required testing. A PASS approves **test-only automated QA**, not independent security review, customer acceptance, product merge, database migration, deployment or new development scope.
 9. QA agents can record defects and propose test fixes on isolated branches; they cannot modify protected application source/PRs. Development agents reference QA results but still need owner approval for new scope.
-10. No self-approval. Keep PRs draft until independently reviewed; document all failure and rerun evidence, never rewrite prior results to say they passed.
+10. Record the actual reviewer identity and role. Within the owner-authorized single-developer internal scope, owner review is permitted under GOV_SINGLE_DEV_01; never represent owner/AI review as independent human signoff. Keep PRs draft until the applicable disposition; document all failure and rerun evidence, never rewrite prior results to say they passed.
 11. For setup and trigger instructions read `docs/AUTO_QA_01_CROSS_REPO_SETUP.md`. Codex reading this file does not automatically schedule or spawn agents.
+
+## Owner-authorized personnel amendment — GOV_SINGLE_DEV_01
+Follow [the single-developer delivery policy](docs/SINGLE_DEVELOPER_DELIVERY_POLICY.md). A separate independent reviewer/operator is no longer a blanket prerequisite for already-authorized internal single-developer engineering and QA. The same owner may implement, review and genuinely operate checks. Label OWNER_REVIEW, OWNER_OPERATOR and OWNER_ACCEPTANCE accurately; AI review is AI_REVIEW. This supersedes blanket second-person wording for that internal scope, including rule 3's personnel requirement, without widening any plan or workflow allowlist.
+
+Preserve product rule 27 verbatim, exact-source handoffs, credential-isolated reporting, all assertions and artifact provenance. Actual Windows/manual/encrypted-recovery requirements remain; missing checks stay NOT_RUN and affected acceptance stays NOT_PASS/NOT_READY. Current WIN11P author-excluding validators and review-event requirements are not yet compatible with this policy. Implement and verify an explicit owner mode before activation; do not spoof an independent identity or bypass existing controls. Historical independent-mode evidence remains unchanged. Routine bounded implementation/synthetic testing needs no repeated owner confirmation; applicable release and concrete clinical/security obligations remain separate.

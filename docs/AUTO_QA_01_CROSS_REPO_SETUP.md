@@ -4,6 +4,8 @@
 **QA repository:** `ARG-Digital-Solutions/aronexa-qa-central`  
 **Development repository:** `ARG-Digital-Solutions/aronexa-healthcare-platform`
 
+**Current personnel policy:** [GOV_SINGLE_DEV_01](SINGLE_DEVELOPER_DELIVERY_POLICY.md) permits owner review and genuine owner-operated internal checks, supported by AI review and automated evidence. It supersedes blanket requirements for a different human in the authorized internal scope. Rule 27 and all technical acceptance requirements remain. Current WIN11P code still rejects author reviewer/operator identities and requires an independent GitHub approval; it must be adapted and tested before activation. This document does not enable a workflow or change protected settings.
+
 ## Contract and data flow
 
 1. A development PR includes exactly one QA plan label: `qa-plan:P01_T07_INT_REG_01` for the current milestone.
@@ -23,11 +25,11 @@ Secrets must be configured from GitHub **Settings → Secrets and variables → 
 | `ARONEXA_SOURCE_READ_TOKEN` | QA Central repository | Product repository only: **Contents: read** (already observed working) | Verify product PR, checkout exact test SHA |
 | `ARONEXA_DEV_STATUS_TOKEN` | QA Central repository | Product repository only: **Commit statuses: write** | Publish exact-SHA status; no source-code write permission |
 
-Confirm **Actions** is enabled on both private repositories and the QA Central controller job may use `GITHUB_TOKEN` with `actions:write` to dispatch its **own** reviewed test workflow. The QA issue commenter requires `issues:write` on QA Central, granted only to the reporter job.
+Confirm repository visibility/confidentiality is intended and verify Actions permissions before activation; both repositories last reported public, so do not assume private artifact transport. The QA Central controller may use `GITHUB_TOKEN` with `actions:write` only for its own reviewed test workflow. The QA issue commenter requires `issues:write` on QA Central, granted only to the reporter job. Raw credentials, operator sheets and unsanitized logs/XML/dumps must not be public artifacts.
 
 ## Activation (not yet performed)
 
-1. Independent reviewers inspect the QA Central and application workflow PRs, especially `pull_request_target` and token isolation. Verify source QA tests are not executed in the privileged dispatch or report job.
+1. Use documented owner and AI review under GOV_SINGLE_DEV_01 for the internal workflow, especially `pull_request_target` and token isolation. Verify source QA tests are not executed in the privileged dispatch or report job. Identify concrete unresolved risks separately. Current WIN11P activation remains blocked until an explicit tested owner mode and appropriate administrator controls exist.
 2. Approve and merge the QA Central automation PR. Then approve and merge the product **workflow-only** PR. Neither merge affects product PR #64.
 3. Create and grant the two new secrets above (existing source read secret can be reused). **Do not authorize general Contents write on product code.**
 4. After setup, label a relevant application PR with one reviewed plan label. Example (PR #64 remains **draft and cannot be merged automatically**):
@@ -38,23 +40,23 @@ gh pr edit 64 --repo ARG-Digital-Solutions/aronexa-healthcare-platform --add-lab
 ```
 
 5. Watch the product `AroNexa - Central QA Handoff` run and QA Central `AroNexa Central QA - Cross Repository Handoff`, plus the child `AroNexa P01-T07 INT-REG01 Independent QA`. Verify the application commit status context and exact request key link to the same test child run. Confirm both complete. A green synthetic build is **not** independent sign-off.
-6. Have an independent reviewer disposition the evidence and separately authorize the next development task.
+6. Record owner disposition plus actual automated/operator evidence under GOV_SINGLE_DEV_01. Do not demand a second account/person or a GitHub self-APPROVE event. Verify the exact-source Central handoff; proceed only within standing task authorization and applicable gates. Policy approval is not an execution acknowledgement.
 
 The product handoff job **fails explicitly** when a PR lacks exactly one reviewed QA plan label or originates from an unauthorized fork. This prevents GitHub's skipped-job-as-success behavior. After activation, existing internal PRs without a reviewed plan may be blocked; do not invent a generic pass or suppress the gate. Register a suitable plan and apply its label before proceeding. Enforcement via GitHub protected branch/rulesets depends on the repository's subscription and org policies; current private repo ruleset API access was restricted when checked.
 
 ## Future QA tasks
 
 - Add a new reviewed `qa/plans/<PLAN_ID>.json` with requirement IDs, exact allowed source scope, SHA/base, test classes/suites, reviewer and release gates, and a central QA issue ID.
-- Add or update a corresponding independently reviewed **allowlisted QA workflow**, not an arbitrary `workflow` filename supplied by development. Update the explicit workflow allowlist in the QA controller and plan validator. The initial implementation supports **only `qa-int-reg01.yml`**. New plan IDs alone are not sufficient for unrelated features.
+- Add or update a corresponding **allowlisted QA workflow** reviewed under the personnel policy, not an arbitrary `workflow` filename supplied by development. Update the explicit workflow allowlist in the QA controller and plan validator only within authorized implementation scope. The initial implementation supports **only `qa-int-reg01.yml`**. New plan IDs alone are not sufficient for unrelated features.
 - Have development PR agents apply exactly one `qa-plan:<PLAN_ID>` label. Every code push re-evaluates the **current exact SHA**, never relying on stale run results.
 - Keep QA outputs in QA Central's Actions logs/artifacts and issue records; source-coupled JUnit/Testcontainers tests remain versioned with the product source.
-- The next coding agent may start *only an independently authorized task* after matching QA PASS and required manual approvals. GitHub Actions alone does not independently start a ChatGPT/Codex agent.
+- At an affected handoff, the next coding agent verifies matching QA PASS and the applicable owner disposition, then continues only an already-authorized task. Routine bounded corrections and synthetic tests retain standing authorization. GitHub Actions alone does not start a ChatGPT/Codex agent.
 
 ## Failure handling
 
 - Unknown/malformed plan, external fork, out-of-scope source changes, missing secrets, invalid PR label, stale commit, skipped/failed child suite, missing report token or timeout: **fail closed**. Do not switch tests off or convert skip into PASS.
 - If the QA controller fails before validating the PR, the source-side job will time out rather than claim PASS. The run logs show the blocker.
-- Independent review/owner approvals remain mandatory. Neither workflow merges PRs, modifies shared DB, issues licences or deploys customer code.
+- Owner review and actual required evidence remain mandatory under GOV_SINGLE_DEV_01; applicable clinical/security and customer-release conditions remain separate. Neither workflow merges PRs, modifies shared DB, issues licences or deploys customer code. Missing Windows/operator evidence is not a blanket freeze on all routine web engineering.
 - Existing PR #64 has a verified **test-only** CI PASS on `7f1fb76ce80a9fb838df06fc616e14f169bc2dd4` via https://github.com/ARG-Digital-Solutions/aronexa-qa-central/actions/runs/42585442420. The new automated handoff has **not** itself been executed.
 
 ## Reference documentation
