@@ -7,8 +7,8 @@
   "source_base_branch": "codex/win11p-integrated-reception-e2e",
   "source_baseline_sha": "1abb41ba76acef072001336d8b86d4a0d29ac6a2",
   "source_branch": "codex/issue146-persistent-windows-e2e",
-  "source_expected_head_sha": "89c985dfd9c1b8cb456e07bc1e6516785c038604",
-  "frozen_frontend_sha": "89c985dfd9c1b8cb456e07bc1e6516785c038604",
+  "source_expected_head_sha": "065cfea959bfe6fd1ad334a7ccae98f84a1ddf9a",
+  "frozen_frontend_sha": "065cfea959bfe6fd1ad334a7ccae98f84a1ddf9a",
   "authorized_changed_paths": [
     "backend/src/test/java/com/argdigital/aronexa/appointment/Pilot05SeparateJvmHttpTests.java",
     "backend/src/test/java/com/argdigital/aronexa/patient/PatientCandidateSearchHttpAcceptanceTests.java",
@@ -107,13 +107,19 @@
     "protected_environment_and_reviewer_operator_identity_configuration_missing",
     "real_exact_head_windows_execution_and_all_eight_gate_evidence_missing",
     "full_maven_failures_unresolved_until_real_clean_run",
-    "independent_artifact_bound_operator_and_reviewer_receipts_missing"
+    "independent_artifact_bound_operator_and_reviewer_receipts_missing",
+    "scope_expansion_not_independently_reviewed",
+    "executor_collector_reporter_still_use_old_full_verify_contract",
+    "guarded_database_provisioning_and_identity_bound_teardown_not_integrated",
+    "coordinator_all_mode_always_exit2_and_full_verification_NOT_PASS",
+    "existing_recovery_test_is_unencrypted_only",
+    "surefire_shutdown_timeout_and_hikari_warnings_unresolved"
   ],
   "test_only": true,
   "independent_review_required": true,
   "customer_release_allowed_on_ci_pass": false,
   "disposition": "NOT_RUN",
-  "notes": "Draft QA infrastructure proposal only. Structural validation is not activation. Original eight checks retained. Legacy INT-REG01 workflow/controller and automatic product draft policy unchanged. Manual execution defaults denied until independently reviewed QA SHA, protected environments, runner policy exception and admin enrollment are authorized. No credentials or enrollment changed. Raw logs/XML remain private; only normalized evidence is uploaded. No production functionality or customer approval.",
+  "notes": "Draft QA infrastructure proposal only. Structural validation is not activation. Original eight checks retained. Legacy INT-REG01 workflow/controller and automatic product draft policy unchanged. Manual execution defaults denied until independently reviewed QA SHA, protected environments, runner policy exception and admin enrollment are authorized. No credentials or enrollment changed. Raw logs/XML remain private; only normalized evidence is uploaded. No production functionality or customer approval. Review-only Maven lifecycle update: current source/frontend pins refreshed; authorized_changed_paths intentionally retains the prior 13 paths. Candidate 26-path scope, lane selection, inventory and proposed schema mapping live in the review manifest and require independent review plus separate implementation/activation authorization. Current exact scope validation must reject the 26-path product PR. No runtime scripts or workflows changed.",
   "execution_design": {
     "trigger": "workflow_dispatch_only",
     "trusted_ref": "refs/heads/main",
@@ -133,5 +139,19 @@
     "portable_runtime": "Java21 jlink ALL-MODULE-PATH; actual java.home checked in both phase reports",
     "operator_mode": "independent human in isolated VM console; fresh Pilot09 lab; nonempty observation plus bound issue38 receipts",
     "full_maven_failure_blocks_positive_status": true
+  },
+  "review_preparation": {
+    "status": "PENDING_INDEPENDENT_REVIEW_NOT_EXECUTION_READY",
+    "manifest": "qa/reviews/QA38_MAVEN_LIFECYCLE_REVIEW.json",
+    "handoff": "docs/QA38_MAVEN_LIFECYCLE_REVIEW_HANDOFF.md",
+    "previous_source_sha": "89c985dfd9c1b8cb456e07bc1e6516785c038604",
+    "local_tested_code_sha": "ce7fbbc0b7d6658e5c4f9a252dec98dfa5df5ef5",
+    "proposed_changed_path_count": 26,
+    "existing_authorized_path_count": 13,
+    "authorized_changed_paths_intentionally_not_expanded": true,
+    "source_scope_validation_expected": "REJECT_CURRENT_26_PATH_SOURCE_UNTIL_SEPARATELY_REVIEWED_AND_AUTHORIZED",
+    "proposed_maven_lanes": 10,
+    "expected_inventory_methods": 352,
+    "evidence_adapter_update_implemented": false
   }
 }

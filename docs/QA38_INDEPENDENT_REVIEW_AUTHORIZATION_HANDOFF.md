@@ -1,4 +1,6 @@
 # QA38 independent review and administrator authorization handoff
+> Current review preparation: [Maven lifecycle proposal and handoff](QA38_MAVEN_LIFECYCLE_REVIEW_HANDOFF.md), with machine manifest `qa/reviews/QA38_MAVEN_LIFECYCLE_REVIEW.json`. Product head is now065cfea959bfe6fd1ad334a7ccae98f84a1ddf9a; preliminary local tests belong toce7fbbc0b7d6658e5c4f9a252dec98dfa5df5ef5. The earlier source/diagnostic snapshots below are historical. Current plan retains its13-path execution allowlist and must reject the proposed26-path source until separate review/authorization. Full independent execution remains blocked; this notice grants no approval.
+
 Date: 2026-11-15. Status: NOT_READY / DRAFT_NOT_ACTIVATED.
 No approval, merge, activation, runner enrollment, credential change or independent execution is performed by this handoff.
 
