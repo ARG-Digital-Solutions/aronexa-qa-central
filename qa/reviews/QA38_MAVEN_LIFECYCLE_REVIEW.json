@@ -1,30 +1,43 @@
 {
   "schema_version": 1,
-  "document_kind": "REVIEW_PROPOSAL_NOT_EXECUTION_AUTHORIZATION",
+  "document_kind": "OWNER_AUTHORIZED_ENGINEERING_SCOPE_NOT_ACCEPTANCE_AUTHORIZATION",
   "plan_id": "WIN11P_RECEPTION_E2E",
   "source_pr": 148,
   "qa_pr": 37,
-  "source_head": "065cfea959bfe6fd1ad334a7ccae98f84a1ddf9a",
+  "source_head": "407d9f2521ef3322d7652870cd876f049d8a38c2",
   "source_baseline_sha": "1abb41ba76acef072001336d8b86d4a0d29ac6a2",
   "local_tested_code_sha": "ce7fbbc0b7d6658e5c4f9a252dec98dfa5df5ef5",
   "previous_plan_source_sha": "89c985dfd9c1b8cb456e07bc1e6516785c038604",
-  "scope_review": "NOT_REVIEWED",
+  "scope_review": "OWNER_AUTHORIZED_NOT_INDEPENDENTLY_REVIEWED",
   "execution_authorized": false,
   "classification": "NOT_READY",
   "existing_authorized_changed_paths": [
+    "backend/pom.xml",
+    "backend/src/test/java/com/argdigital/aronexa/appointment/AppointmentCandidateHttpAcceptanceTests.java",
     "backend/src/test/java/com/argdigital/aronexa/appointment/Pilot05SeparateJvmHttpTests.java",
+    "backend/src/test/java/com/argdigital/aronexa/appointment/Win11pTestInventoryTests.java",
     "backend/src/test/java/com/argdigital/aronexa/patient/PatientCandidateSearchHttpAcceptanceTests.java",
+    "docs/superpowers/plans/2026-11-15-win11p-maven-lifecycle.md",
     "docs/windows/WIN11P_146_ALTERNATE_PORT_PROPOSAL_20261115.md",
     "docs/windows/WIN11P_146_FICTIONAL_DATA_ACCEPTANCE_20261115.md",
     "docs/windows/WIN11P_146_LOCAL_PREFLIGHT_20261115.md",
     "docs/windows/WIN11P_146_PORT5186_ACCEPTANCE_20261115.md",
+    "docs/windows/WIN11P_MAVEN_TEST_LIFECYCLE_BUILD_LOG_20261115.md",
+    "docs/windows/win11p-maven-evidence/method-inventory-512c0d5fb9ecaed630a4642b80a76425d86f23b9.json",
+    "docs/windows/win11p-maven-evidence/method-inventory-ce7fbbc0b7d6658e5c4f9a252dec98dfa5df5ef5.json",
+    "docs/windows/win11p-maven-evidence/ordinary-matrix-results-512c0d5fb9ecaed630a4642b80a76425d86f23b9.json",
+    "docs/windows/win11p-maven-evidence/ordinary-matrix-results-ce7fbbc0b7d6658e5c4f9a252dec98dfa5df5ef5.json",
     "frontend/test/browser/pilot06-preview-readiness.mjs",
     "frontend/test/browser/pilot08-rc03-created-restart.mjs",
     "frontend/test/browser/rc03-preview-port.ts",
     "frontend/test/patient-candidate-search-client.test.mjs",
     "frontend/test/rc03-preview-port.test.mjs",
     "frontend/vite.connected-reception.config.ts",
-    "scripts/pilot/Test-AroNexa-Pilot05-DistinctJvm-Restart.ps1"
+    "scripts/pilot/Invoke-Win11p-MavenMatrix.ps1",
+    "scripts/pilot/Test-AroNexa-Pilot05-DistinctJvm-Restart.ps1",
+    "scripts/pilot/Test-Win11p-MavenMatrix.ps1",
+    "scripts/pilot/Win11p-MavenMatrix.psm1",
+    "scripts/pilot/win11p-maven-matrix.json"
   ],
   "proposed_changed_paths": [
     "backend/pom.xml",
@@ -58,184 +71,236 @@
     {
       "path": "backend/pom.xml",
       "category": "backend-build",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "fbc6fd76457b9db78fd720c7512bfed918eade6a"
+      "head_blob": "fbc6fd76457b9db78fd720c7512bfed918eade6a",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "backend/src/test/java/com/argdigital/aronexa/appointment/AppointmentCandidateHttpAcceptanceTests.java",
       "category": "backend-test",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "ee8098f6b88aa8a3683eff3a3ed1f384f4e68f2e"
+      "head_blob": "ee8098f6b88aa8a3683eff3a3ed1f384f4e68f2e",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "backend/src/test/java/com/argdigital/aronexa/appointment/Pilot05SeparateJvmHttpTests.java",
       "category": "backend-test",
-      "scope_status": "RETAINED_PATH_MODIFIED_AGAIN_PENDING_REVIEW",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "44d61a1f30b4611d72cafb89333a950d45834fbe"
+      "head_blob": "44d61a1f30b4611d72cafb89333a950d45834fbe",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "backend/src/test/java/com/argdigital/aronexa/appointment/Win11pTestInventoryTests.java",
       "category": "backend-test",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "d87ae74657bc5e3c10666a7da33b3b597f2b5ffd"
+      "head_blob": "d87ae74657bc5e3c10666a7da33b3b597f2b5ffd",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "backend/src/test/java/com/argdigital/aronexa/patient/PatientCandidateSearchHttpAcceptanceTests.java",
       "category": "backend-test",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "99fb8a9ab938d240df4e52a12bf1993c0b1bf295"
+      "head_blob": "99fb8a9ab938d240df4e52a12bf1993c0b1bf295",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "docs/superpowers/plans/2026-11-15-win11p-maven-lifecycle.md",
       "category": "documentation-or-sanitized-evidence",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "c3a214f75aa376c5e560566b862752b3dfbe8603"
+      "head_blob": "c3a214f75aa376c5e560566b862752b3dfbe8603",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "docs/windows/WIN11P_146_ALTERNATE_PORT_PROPOSAL_20261115.md",
       "category": "documentation-or-sanitized-evidence",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "09360348773067985716ed1eb2d85d8fda193116"
+      "head_blob": "09360348773067985716ed1eb2d85d8fda193116",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "docs/windows/WIN11P_146_FICTIONAL_DATA_ACCEPTANCE_20261115.md",
       "category": "documentation-or-sanitized-evidence",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "90d6310ce6b6b722a8fe8709e0f69f6933d673f6"
+      "head_blob": "90d6310ce6b6b722a8fe8709e0f69f6933d673f6",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "docs/windows/WIN11P_146_LOCAL_PREFLIGHT_20261115.md",
       "category": "documentation-or-sanitized-evidence",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "2c4a6836bbeee7d2172274103798c26d257af699"
+      "head_blob": "2c4a6836bbeee7d2172274103798c26d257af699",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "docs/windows/WIN11P_146_PORT5186_ACCEPTANCE_20261115.md",
       "category": "documentation-or-sanitized-evidence",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "d9b1d82f54ea745e5352eae6ad011bb61fea0012"
+      "head_blob": "d9b1d82f54ea745e5352eae6ad011bb61fea0012",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "docs/windows/WIN11P_MAVEN_TEST_LIFECYCLE_BUILD_LOG_20261115.md",
       "category": "documentation-or-sanitized-evidence",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "455423a9a7a2ea5ebcdc2f16535242c25d271de1"
+      "head_blob": "1c810b60533e4729270a31ce4d71a5751a4c9c1e",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "docs/windows/win11p-maven-evidence/method-inventory-512c0d5fb9ecaed630a4642b80a76425d86f23b9.json",
       "category": "documentation-or-sanitized-evidence",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "7c587e81b8c362048eb04f012537b7c615f30baf"
+      "head_blob": "7c587e81b8c362048eb04f012537b7c615f30baf",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "docs/windows/win11p-maven-evidence/method-inventory-ce7fbbc0b7d6658e5c4f9a252dec98dfa5df5ef5.json",
       "category": "documentation-or-sanitized-evidence",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "243036655f2da824ee67f7278c0c3be2509ba0d2"
+      "head_blob": "243036655f2da824ee67f7278c0c3be2509ba0d2",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "docs/windows/win11p-maven-evidence/ordinary-matrix-results-512c0d5fb9ecaed630a4642b80a76425d86f23b9.json",
       "category": "documentation-or-sanitized-evidence",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "f5632ea533a5ea7dd740e3225f987e620eeb8cc1"
+      "head_blob": "f5632ea533a5ea7dd740e3225f987e620eeb8cc1",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "docs/windows/win11p-maven-evidence/ordinary-matrix-results-ce7fbbc0b7d6658e5c4f9a252dec98dfa5df5ef5.json",
       "category": "documentation-or-sanitized-evidence",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "09dcd43332cab6495e0ab58b7a96d21035fb9425"
+      "head_blob": "09dcd43332cab6495e0ab58b7a96d21035fb9425",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "frontend/test/browser/pilot06-preview-readiness.mjs",
       "category": "frontend-test-or-preview",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "3bdb7c1fe7199b9c60ea9ae04cfde8a1cc3311b1"
+      "head_blob": "3bdb7c1fe7199b9c60ea9ae04cfde8a1cc3311b1",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "frontend/test/browser/pilot08-rc03-created-restart.mjs",
       "category": "frontend-test-or-preview",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "799d256ade0bd6f3d4152176c107eef6ef63d780"
+      "head_blob": "799d256ade0bd6f3d4152176c107eef6ef63d780",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "frontend/test/browser/rc03-preview-port.ts",
       "category": "frontend-test-or-preview",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "0f70053fd49d58aaf6df537c32de13a88cc3f8a9"
+      "head_blob": "0f70053fd49d58aaf6df537c32de13a88cc3f8a9",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "frontend/test/patient-candidate-search-client.test.mjs",
       "category": "frontend-test-or-preview",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "2f405d6bc3593c841346619be80290d363a7db81"
+      "head_blob": "2f405d6bc3593c841346619be80290d363a7db81",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "frontend/test/rc03-preview-port.test.mjs",
       "category": "frontend-test-or-preview",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "57da98ef9cb1de351ba1e3196aaa51c982aee3aa"
+      "head_blob": "57da98ef9cb1de351ba1e3196aaa51c982aee3aa",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "frontend/vite.connected-reception.config.ts",
       "category": "frontend-test-or-preview",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "7aa1e4e422661c4a2718c4149f307a515c7f34c0"
+      "head_blob": "7aa1e4e422661c4a2718c4149f307a515c7f34c0",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "scripts/pilot/Invoke-Win11p-MavenMatrix.ps1",
       "category": "test-orchestration",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "141cf75d1138ad41e1b5775376dfe8892f8b824d"
+      "head_blob": "222f5dad298264fbb11e84c308ff48d53723d115",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "scripts/pilot/Test-AroNexa-Pilot05-DistinctJvm-Restart.ps1",
       "category": "test-orchestration",
-      "scope_status": "RETAINED_PATH",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": true,
-      "head_blob": "5425efaca253acca8fcc22543c3ee190f7e3361b"
+      "head_blob": "5425efaca253acca8fcc22543c3ee190f7e3361b",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "scripts/pilot/Test-Win11p-MavenMatrix.ps1",
       "category": "test-orchestration",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "ca3a9ff1fe6e91eb91c996a0c59750476421fe0b"
+      "head_blob": "e5dace5c3529ddf2bad0685c2e9faef74a674944",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "scripts/pilot/Win11p-MavenMatrix.psm1",
       "category": "test-orchestration",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "86dcd6795d8e01e48abd76c4d98dfb1479472e09"
+      "head_blob": "df23a04d0bf32cc675a811543c61d8177a30696c",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     },
     {
       "path": "scripts/pilot/win11p-maven-matrix.json",
       "category": "test-orchestration",
-      "scope_status": "PROPOSED_ADDITION_NOT_AUTHORIZED",
+      "scope_status": "OWNER_AUTHORIZED_PENDING_INDEPENDENT_ACCEPTANCE",
       "prior_plan_member": false,
-      "head_blob": "084c07ecae69edc7cce780da11f4ce0788d5673c"
+      "head_blob": "084c07ecae69edc7cce780da11f4ce0788d5673c",
+      "owner_scope_authorized": true,
+      "independent_review": "NOT_REVIEWED"
     }
   ],
   "scope_summary": {
@@ -398,7 +463,7 @@
   "normalized_mapping_proposal": {
     "current_schema_version": 1,
     "proposed_schema_version": 2,
-    "implemented": false,
+    "implemented": true,
     "retain_all_current_required_fields_and_gates": true,
     "identity_fields": [
       "source_sha",
@@ -427,9 +492,37 @@
     "full_maven_tests_must_equal_unique_mandatory_method_results": 352,
     "security_phase_operator_projections_must_not_add_to_total": true,
     "current_matrix_json_is_not_schema1_evidence": true,
-    "current_exit2_must_never_be_normalized_to_exit0": true
+    "current_exit2_must_never_be_normalized_to_exit0": true,
+    "public_matrix_field": "matrix",
+    "inventory_digest_pin": "51d6a0aa30491e8c68c4d60f41ccf27f20e99dce984f0fadcc0a867715425da8"
   },
   "blockers": [
+    "coordinator_all_mode_always_exit2_and_full_verification_NOT_PASS",
+    "existing_recovery_test_is_unencrypted_only",
+    "surefire_shutdown_timeout_and_hikari_warnings_unresolved",
+    "genuine_lane_authorizations_and_independent_operator_receipts_missing",
+    "admin_runner_environment_exact_qa_pins_and_credentials_authorization_pending",
+    "independent_exact_revision_acceptance_missing",
+    "windows_policy_exception_and_isolation_not_reviewed",
+    "admin_configuration_capabilities_unverified_or_denied"
+  ],
+  "owner_scope_authorized": true,
+  "original_13_path_allowlist": [
+    "backend/src/test/java/com/argdigital/aronexa/appointment/Pilot05SeparateJvmHttpTests.java",
+    "backend/src/test/java/com/argdigital/aronexa/patient/PatientCandidateSearchHttpAcceptanceTests.java",
+    "docs/windows/WIN11P_146_ALTERNATE_PORT_PROPOSAL_20261115.md",
+    "docs/windows/WIN11P_146_FICTIONAL_DATA_ACCEPTANCE_20261115.md",
+    "docs/windows/WIN11P_146_LOCAL_PREFLIGHT_20261115.md",
+    "docs/windows/WIN11P_146_PORT5186_ACCEPTANCE_20261115.md",
+    "frontend/test/browser/pilot06-preview-readiness.mjs",
+    "frontend/test/browser/pilot08-rc03-created-restart.mjs",
+    "frontend/test/browser/rc03-preview-port.ts",
+    "frontend/test/patient-candidate-search-client.test.mjs",
+    "frontend/test/rc03-preview-port.test.mjs",
+    "frontend/vite.connected-reception.config.ts",
+    "scripts/pilot/Test-AroNexa-Pilot05-DistinctJvm-Restart.ps1"
+  ],
+  "historical_pre_engineering_blockers": [
     "scope_expansion_not_independently_reviewed",
     "executor_collector_reporter_still_use_old_full_verify_contract",
     "guarded_database_provisioning_and_identity_bound_teardown_not_integrated",
@@ -438,5 +531,19 @@
     "surefire_shutdown_timeout_and_hikari_warnings_unresolved",
     "genuine_lane_authorizations_and_independent_operator_receipts_missing",
     "admin_runner_environment_exact_qa_pins_and_credentials_authorization_pending"
-  ]
+  ],
+  "engineering_verification": {
+    "product_sha": "407d9f2521ef3322d7652870cd876f049d8a38c2",
+    "qa_unit_tests": 66,
+    "qa_failures": 0,
+    "qa_errors": 0,
+    "qa_skips": 0,
+    "frontend_tests": 249,
+    "connected_build": "PASS",
+    "backend_test_compilation": "PASS",
+    "pg17_owned_resource_smoke": "PASS",
+    "independent_human_signoff": false,
+    "central_qa": "NOT_RUN",
+    "full_verification": "NOT_PASS"
+  }
 }

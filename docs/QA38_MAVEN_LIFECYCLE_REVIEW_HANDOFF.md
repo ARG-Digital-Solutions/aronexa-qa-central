@@ -1,3 +1,7 @@
+Current owner-authorized engineering supersedes the review-only implementation/scope restrictions below. See [bounded engineering results](QA38_BOUNDED_ENGINEERING_RESULTS.md) and [administrator readiness](QA38_WIN11P_ADMIN_READINESS.md). Historical evidence and missing independent acceptance remain unchanged.
+
+---
+
 # QA38 Maven lifecycle correction: independent review proposal
 
 Status: **DRAFT_NOT_ACTIVATED / NOT_READY / rule 27 HOLD**. This is review preparation only. No execution approval, reviewer disposition, operator receipt, runner enrollment, credential change, merge or deployment is recorded.

@@ -15,10 +15,11 @@ sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 sys.path.insert(0,str(Path(__file__).resolve().parent))
 import win11p_control as control
 from test_win11p_contract import evidence,SHA,QA,DIGEST
+from test_win11p_matrix import schema2_evidence
 
 class ControlTests(unittest.TestCase):
-    def fixture(self):
-        e=evidence();encoded=json.dumps(e).encode()
+    def fixture(self,legacy=False):
+        e=evidence() if legacy else schema2_evidence();encoded=json.dumps(e).encode()
         out=io.BytesIO()
         with zipfile.ZipFile(out,"w") as z:z.writestr("evidence.json",encoded)
         raw=out.getvalue()
@@ -37,7 +38,8 @@ class ControlTests(unittest.TestCase):
         args=types.SimpleNamespace(artifact_id="12",source_bundle_sha=DIGEST,qa_archive_sha=DIGEST)
         def api(path):
             return raw if path.endswith("/zip") else json.dumps(meta).encode()
-        with patch.object(control,"checked_context",return_value=({},c,dict(user=dict(login="author")),dict(user=dict(login="qa-author")))),\
+        plan=dict(expected_inventory_sha256=schema2_evidence()["matrix"]["inventory_sha256"])
+        with patch.object(control,"checked_context",return_value=(plan,c,dict(user=dict(login="author")),dict(user=dict(login="qa-author")))),\
              patch.object(control,"gh",side_effect=api),\
              patch.object(control.subprocess,"check_output",return_value=json.dumps([comments]).encode()),\
              patch.dict(os.environ,{"GITHUB_REPOSITORY":"ARG-Digital-Solutions/aronexa-qa-central","EXECUTION_RESULT":result}):
@@ -70,6 +72,28 @@ class ControlTests(unittest.TestCase):
         e,raw,meta,c,comments=self.fixture()
         bad=json.loads(comments[-1]["body"]);bad["disposition"]="FAIL"
         comments.append(dict(user=dict(login="reviewer",type="User"),body=json.dumps(bad)))
+        with tempfile.TemporaryDirectory() as tmp:
+            old=os.getcwd()
+            try:
+                os.chdir(tmp)
+                with self.assertRaises(ValueError):self.run_report(raw,meta,c,comments)
+                self.assertFalse(Path("status.json").exists())
+            finally:os.chdir(old)
+
+    def test_new_report_rejects_schema1_before_writing_status(self):
+        e,raw,meta,c,comments=self.fixture(legacy=True)
+        with tempfile.TemporaryDirectory() as tmp:
+            old=os.getcwd()
+            try:
+                os.chdir(tmp)
+                with self.assertRaises(ValueError):self.run_report(raw,meta,c,comments)
+                self.assertFalse(Path("status.json").exists())
+            finally:os.chdir(old)
+
+    def test_ambiguous_latest_reviewer_receipt_cannot_reuse_earlier_pass(self):
+        e,raw,meta,c,comments=self.fixture()
+        body=comments[-1]["body"].replace('"disposition": "PASS"','"disposition": "FAIL", "disposition": "PASS"')
+        comments.append(dict(user=dict(login="reviewer",type="User"),body=body))
         with tempfile.TemporaryDirectory() as tmp:
             old=os.getcwd()
             try:

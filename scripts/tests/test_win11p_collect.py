@@ -9,6 +9,7 @@ import unittest
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from win11p_collect import collect,totals,runtime_hash,postgres_observed
 from win11p_contract import validate_evidence,GATES
+from test_win11p_matrix import matrix_fixture,write_matrix_reports,MATRIX_RUN
 SHA="a"*40
 QA="b"*40
 RUN="11111111-1111-4111-8111-111111111111"
@@ -23,7 +24,7 @@ class CollectorTests(unittest.TestCase):
             props='<properties><property name="java.version" value="21.0.13"/><property name="password" value="DO_NOT_PUBLISH"/><property name="java.home" value="'+runtime.as_posix()+'"/></properties>'
             return put(name,'<testsuite tests="'+str(n)+'" failures="0" errors="0" skipped="0">'+props+
                 ''.join('<testcase name="'+(method if n==1 else method+str(i))+'"/>' for i in range(n))+'</testsuite>')
-        records=[dict(run_id=r,version_num=170011,container_id="c"*64,
+        records=[dict(run_id=r,version_num=170011,container_id="c"*64,image_id="sha256:"+"f"*64,
             database_name="aronexa_pilot05_disposable_only",loopback=True) for r in (RUN,OP)]
         summary="SourceCommit="+SHA+"\nRunId="+RUN+"\nRc03PreviewPort=5186\n"
         summary+="".join(k+"=true\n" for k in ("Rc03BrowserCreatedRegistration","Rc03BrowserCreatedBookingAndCheckIn",
@@ -43,6 +44,10 @@ class CollectorTests(unittest.TestCase):
             operator_observation=put("operator.txt","PatientRecordsCreated=1\nCheckedInAppointments=1\n"),
             operator_summary=put("operator-summary.txt","SourceCommit="+SHA+"\nRunId="+OP+"\n"),
             operator_exit=0,operator_xml=xml("op.xml",1,"pilot09OperatorAssistedWindowsFictionalLab"))
+        raw=matrix_fixture();matrix_path=root/"matrix-results.json";matrix_path.write_text(json.dumps(raw))
+        d.update(matrix_results_path=str(matrix_path),matrix_execution_run_id=MATRIX_RUN,
+                 matrix_report_paths=write_matrix_reports(root,raw))
+        d["full_maven_reports"]=[path for group in d["matrix_report_paths"] for path in group["paths"]]
         return d
 
     def execute(self,root,d):
@@ -57,6 +62,49 @@ class CollectorTests(unittest.TestCase):
             self.assertNotIn(tmp,public)
             self.assertEqual(e["roles"]["tests"],4)
             self.assertEqual(e["rls"]["tests"],8)
+
+    def test_missing_matrix_produces_honest_schema2_failure_without_downgrade(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);d=self.fixture(root);del d["matrix_results_path"]
+            e=self.execute(root,d)
+            self.assertEqual(e["schema_version"],2)
+            self.assertFalse(e["matrix"]["xml_verified"])
+            self.assertEqual(e["gates"][GATES[7]],"FAIL")
+            with self.assertRaises(ValueError):validate_evidence(e,SHA,QA,"123-1")
+
+    def test_matrix_failure_and_private_fields_preserved_as_sanitized_counts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);d=self.fixture(root);p=Path(d["matrix_results_path"])
+            raw=json.loads(p.read_text());raw["method_results"][0]["outcome"]="FAIL"
+            raw["lane_results"][1]["failures"]=1;raw["lane_results"][1]["exit_code"]=7
+            raw["lane_results"][1]["parser_issues"]=["DO_NOT_PUBLISH"]
+            raw["raw_log"]="DO_NOT_PUBLISH";p.write_text(json.dumps(raw))
+            e=self.execute(root,d);ordinary=next(r for r in e["matrix"]["lane_results"] if r["lane"]=="ordinary")
+            self.assertEqual(ordinary["failures"],1);self.assertEqual(ordinary["exit_code"],7)
+            self.assertEqual(ordinary["parser_issue_count"],1);self.assertFalse(e["matrix"]["xml_verified"])
+            self.assertNotIn("DO_NOT_PUBLISH",json.dumps(e))
+
+    def test_matrix_resource_and_stdout_project_restart_operator_without_wrapper_summaries(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);d=self.fixture(root)
+            d["rc03_summary"]="";d["operator_summary"]=""
+            d["rc03_logs"]=[d["rc03_log"]]
+            p=Path(d["matrix_results_path"]);raw=json.loads(p.read_text())
+            for row in raw["lane_results"]:
+                if row["lane"] in {"pilot05-rc03-phase-a","pilot05-rc03-phase-b"}:
+                    row.update(resource_run_id=RUN,preview_port=5186)
+                if row["lane"]=="pilot09-operator":row.update(resource_run_id=OP)
+            records=[dict(run_id=r,version_num=170011,container_id=str(i)*64,image_id="sha256:"+"f"*64,
+                database_name="aronexa_pilot05_disposable_only",loopback=True) for i,r in ((1,RUN),(2,OP))]
+            Path(d["postgres_observations"]).write_text("\n".join(json.dumps(r) for r in records))
+            p.write_text(json.dumps(raw))
+            e=self.execute(root,d)
+            self.assertEqual(e["gates"][GATES[4]],"PASS")
+            self.assertEqual(e["gates"][GATES[5]],"PASS")
+            self.assertEqual(e["gates"][GATES[6]],"PASS")
+            self.assertEqual(e["database_run_id"],RUN)
+            self.assertEqual(e["operator_database_run_id"],OP)
+            validate_evidence(e,SHA,QA,"123-1")
 
     def test_missing_phase_report_blocks_restart(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -101,10 +149,18 @@ class CollectorTests(unittest.TestCase):
         for field,value in [("version_num",180000),("loopback",False),("run_id",OP)]:
             with tempfile.TemporaryDirectory() as tmp:
                 root=Path(tmp);d=self.fixture(root)
-                r=dict(run_id=RUN,version_num=170011,container_id="c"*64,
+                r=dict(run_id=RUN,version_num=170011,container_id="c"*64,image_id="sha256:"+"f"*64,
                        database_name="aronexa_pilot05_disposable_only",loopback=True)
                 r[field]=value;Path(d["postgres_observations"]).write_text(json.dumps(r))
                 with self.assertRaises(ValueError):postgres_observed(d["postgres_observations"],RUN)
+
+    def test_duplicate_observer_json_keys_cannot_hide_wrong_identity(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp);d=self.fixture(root);p=Path(d["postgres_observations"])
+            record=dict(run_id=RUN,version_num=170011,container_id="c"*64,image_id="sha256:"+"f"*64,
+                        database_name="aronexa_pilot05_disposable_only",loopback=True)
+            p.write_text(json.dumps(record).replace('"version_num": 170011','"version_num": 180000, "version_num": 170011'))
+            with self.assertRaises(ValueError):postgres_observed(p,RUN)
 
     def test_skipped_frontend_blocks_even_if_exit_zero(self):
         with tempfile.TemporaryDirectory() as tmp:

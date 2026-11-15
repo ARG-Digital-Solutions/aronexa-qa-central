@@ -39,7 +39,7 @@ def source_pr(plan):
     return dict(number=148, state="open", draft=True, user=dict(login="author"),
         head=dict(sha=plan["source_expected_head_sha"], ref=plan["source_branch"],
                   repo=dict(full_name=plan["source_repository"])),
-        base=dict(ref=plan["source_base_branch"]))
+        base=dict(ref=plan["source_base_branch"],sha=plan["source_baseline_sha"]))
 
 def context(plan):
     return dict(event="workflow_dispatch", ref="refs/heads/main", qa_sha=QA,
@@ -70,6 +70,11 @@ class ContractTests(unittest.TestCase):
         for gate in GATES:
             p=copy.deepcopy(self.plan);p["required_checks"].remove(gate)
             with self.assertRaises(ValueError): validate_plan(p,ROOT)
+    def test_win_requires_reviewed_schema2_inventory_pin(self):
+        for field,value in (("required_evidence_schema_version",1),("required_evidence_schema_version",None),
+                            ("expected_inventory_sha256",""),("expected_inventory_sha256",None)):
+            p=copy.deepcopy(self.plan);p[field]=value
+            with self.subTest(field=field,value=value),self.assertRaises(ValueError):validate_plan(p,ROOT)
     def test_win_cannot_route_to_int_reg01(self):
         p=copy.deepcopy(self.plan);p["qa_workflow"]="qa-int-reg01.yml"
         with self.assertRaises(ValueError): validate_plan(p,ROOT)
@@ -97,11 +102,12 @@ class ContractTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 validate_context(self.plan,source_pr(self.plan),dict(user=dict(login="qa-author")),[],c)
     def test_context_rejects_stale_fork_wrong_base_or_ready_pr(self):
-        for field in ["stale","fork","base","ready","closed"]:
+        for field in ["stale","fork","base","base_sha","ready","closed"]:
             pr=source_pr(self.plan)
             if field=="stale":pr["head"]["sha"]=SHA
             if field=="fork":pr["head"]["repo"]["full_name"]="evil/fork"
             if field=="base":pr["base"]["ref"]="main"
+            if field=="base_sha":pr["base"]["sha"]="0"*40
             if field=="ready":pr["draft"]=False
             if field=="closed":pr["state"]="closed"
             with self.assertRaises(ValueError):
@@ -166,6 +172,12 @@ class ContractTests(unittest.TestCase):
                 with self.assertRaises(ValueError):read_artifact(data,"0"*64)
             else:
                 with self.assertRaises(ValueError):read_artifact(data,digest)
+    def test_artifact_json_rejects_duplicate_keys_and_nonfinite_numbers(self):
+        for content in ('{"schema_version":1,"schema_version":2}','{"tests":NaN}'):
+            stream=io.BytesIO()
+            with zipfile.ZipFile(stream,"w") as z:z.writestr("evidence.json",content)
+            raw=stream.getvalue()
+            with self.subTest(content=content),self.assertRaises(ValueError):read_artifact(raw,hashlib.sha256(raw).hexdigest())
     def test_artifact_api_requires_current_run_name_sha_and_digest(self):
         m=dict(id=12,name="win11p-evidence-123-1",expired=False,digest="sha256:"+DIGEST,
             workflow_run=dict(id=123,head_sha=QA))

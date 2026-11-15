@@ -111,6 +111,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "24"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Verify QA archive before loading execution script
         env:
           EXPECTED_QA_ARCHIVE_SHA: ${{ needs.prepare.outputs.qa_archive_sha }}
@@ -127,6 +130,13 @@ jobs:
           EXPECTED_CONTEXT_SHA: ${{ needs.prepare.outputs.context_sha }}
           EXPECTED_SOURCE_BUNDLE_SHA: ${{ needs.prepare.outputs.source_bundle_sha }}
           EXPECTED_QA_ARCHIVE_SHA: ${{ needs.prepare.outputs.qa_archive_sha }}
+          # Per-run reviewed inputs from this protected execution environment.
+          # These are guard assertions, not independent receipt provenance.
+          # Do not place credentials, fictional staff sheets or operator notes here.
+          WIN11P_EXECUTION_AUTHORIZATION_JSON: ${{ vars.WIN11P_EXECUTION_AUTHORIZATION_JSON }}
+          WIN11P_EXECUTION_AUTHORIZATION_SHA256: ${{ vars.WIN11P_EXECUTION_AUTHORIZATION_SHA256 }}
+          WIN11P_AUTHORIZATION_VERIFIED_SHA256: ${{ vars.WIN11P_AUTHORIZATION_VERIFIED_SHA256 }}
+          WIN11P_AUTHORIZATION_REQUEST_ID: ${{ vars.WIN11P_AUTHORIZATION_REQUEST_ID }}
         shell: pwsh
         run: |
           & (Join-Path $env:RUNNER_TEMP 'win11p-bootstrap/scripts/Invoke-Win11pReception.ps1') -InputDirectory (Join-Path $env:RUNNER_TEMP 'win11p-input') -ExpectedContextSha $env:EXPECTED_CONTEXT_SHA -ExpectedSourceBundleSha $env:EXPECTED_SOURCE_BUNDLE_SHA -ExpectedQaArchiveSha $env:EXPECTED_QA_ARCHIVE_SHA

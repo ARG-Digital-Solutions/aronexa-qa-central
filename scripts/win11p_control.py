@@ -9,7 +9,7 @@ import subprocess
 import sys
 from win11p_contract import (
     PLAN,GATES,REPOSITORY,require,validate_plan,validate_context,validate_scope,
-    validate_evidence,validate_receipt,validate_artifact_metadata,read_artifact,
+    validate_evidence,validate_receipt,validate_artifact_metadata,read_artifact,strict_json_loads,
 )
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -88,7 +88,9 @@ def report(args):
     raw=gh("repos/"+os.environ["GITHUB_REPOSITORY"]+"/actions/artifacts/"+str(artifact_id)+"/zip")
     data=read_artifact(raw,digest)
     request=c["run_id"]+"-"+c["run_attempt"]
-    validate_evidence(data,c["source_sha"],c["qa_sha"],request)
+    require(isinstance(plan.get("expected_inventory_sha256"),str),"reviewed inventory pin absent")
+    validate_evidence(data,c["source_sha"],c["qa_sha"],request,required_schema=2,
+                      expected_inventory_sha256=plan["expected_inventory_sha256"])
     expected={"source_bundle_sha256":args.source_bundle_sha,"qa_archive_sha256":args.qa_archive_sha}
     require(all(data[k]==v for k,v in expected.items()),"evidence/input bundle mismatch")
     # Hash normalized evidence bytes exactly as uploaded, not reserialized JSON.
@@ -100,8 +102,15 @@ def report(args):
     comments=[comment for page in pages for comment in page]
     receipts=[]
     for comment in comments:
-        try:receipt=json.loads(comment.get("body",""))
-        except (ValueError,TypeError):continue
+        try:receipt=strict_json_loads(comment.get("body",""))
+        except (ValueError,TypeError):
+            # Ambiguous current-request JSON is a negative latest receipt. Do
+            # not discard it and accidentally reuse an earlier approval.
+            try:ambiguous=json.loads(comment.get("body",""))
+            except (ValueError,TypeError):continue
+            if isinstance(ambiguous,dict) and ambiguous.get("request_id")==request:
+                receipts.append((comment,{"request_id":request,"disposition":"INVALID"}))
+            continue
         if isinstance(receipt,dict) and receipt.get("request_id")==request:
             receipts.append((comment,receipt))
     for login in (c["operator"],c["reviewer"]):
