@@ -4,6 +4,7 @@ import json
 import pathlib
 import re
 import sys
+from win11p_contract import validate_plan
 
 root = pathlib.Path(__file__).resolve().parents[1]
 directory = root / "qa" / "plans"
@@ -27,6 +28,15 @@ for path in plans:
         fail(f"{path.name}: invalid plan ID")
     if path.stem != plan_id:
         fail(f"{path.name}: plan ID must match filename")
+    if plan_id == "WIN11P_RECEPTION_E2E":
+        try:
+            validate_plan(data, root)
+        except ValueError as error:
+            fail(f"{plan_id}: {error}")
+        print(f"QA PLAN STRUCTURALLY VALID (NOT ACTIVATED): {plan_id}, eight retained gates")
+        continue
+    if plan_id != "P01_T07_INT_REG_01":
+        fail(f"{plan_id}: unknown unapproved plan")
     if data.get("source_repository") != "ARG-Digital-Solutions/aronexa-healthcare-platform":
         fail(f"{plan_id}: wrong source repository")
     if data.get("qa_workflow") not in valid_workflows:

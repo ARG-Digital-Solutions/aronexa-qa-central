@@ -24,7 +24,7 @@
     "frontend/vite.connected-reception.config.ts",
     "scripts/pilot/Test-AroNexa-Pilot05-DistinctJvm-Restart.ps1"
   ],
-  "qa_workflow": null,
+  "qa_workflow": "qa-win11p-reception.yml",
   "proposed_qa_workflow": "qa-win11p-reception.yml",
   "qa_issue_number": 38,
   "local_runner": "scripts/pilot/Test-AroNexa-Pilot05-DistinctJvm-Restart.ps1",
@@ -60,7 +60,11 @@
     "frontend_minimum_tests": 249,
     "failures_allowed": 0,
     "errors_allowed": 0,
-    "skips_allowed": 0
+    "skips_allowed": 0,
+    "backend_rls_class": "com.argdigital.aronexa.auth.PostgresTenantRlsTests",
+    "backend_rls_minimum_tests": 8,
+    "backend_role_class": "com.argdigital.aronexa.auth.AuthRoleBoundaryTests",
+    "backend_role_minimum_tests": 4
   },
   "owner_acknowledged_local_evidence": {
     "source_sha": "bce7a9d501f764b7ba9386225d96ba5f7b89c3aa",
@@ -98,17 +102,36 @@
     "raw_credentials_or_phi_artifacts_allowed": false
   },
   "activation_blockers": [
-    "dedicated_reviewed_workflow_absent",
-    "validator_and_controller_allowlist_and_job_contract_support_absent",
-    "approved_ephemeral_windows_runner_with_linux_postgresql17_docker_not_selected",
-    "independent_reviewer_not_assigned",
-    "source_pr_draft_dispatch_deferred_and_plan_label_absent",
-    "independent_current_head_run_and_disposition_absent",
-    "portable_jvm_identity_and_operator_checks_not_established"
+    "independent_review_and_explicit_admin_authorized_qa_sha_missing",
+    "ephemeral_windows_interactive_runner_and_linux_docker_policy_exception_not_approved_or_enrolled",
+    "protected_environment_and_reviewer_operator_identity_configuration_missing",
+    "real_exact_head_windows_execution_and_all_eight_gate_evidence_missing",
+    "full_maven_failures_unresolved_until_real_clean_run",
+    "independent_artifact_bound_operator_and_reviewer_receipts_missing"
   ],
   "test_only": true,
   "independent_review_required": true,
   "customer_release_allowed_on_ci_pass": false,
   "disposition": "NOT_RUN",
-  "notes": "Metadata correction for review only. All eight original required checks are retained. No validator/controller/workflow, token permission, draft dispatch policy or release gate is changed. Local test-only adapters prove no production runtime functionality. Do not dispatch INT-REG01 as a substitute, accept an ancestor SHA as current-head PASS, publish raw Spring/Surefire credentials, or continue gated WIN-11B without independent exact-SHA evidence and disposition."
+  "notes": "Draft QA infrastructure proposal only. Structural validation is not activation. Original eight checks retained. Legacy INT-REG01 workflow/controller and automatic product draft policy unchanged. Manual execution defaults denied until independently reviewed QA SHA, protected environments, runner policy exception and admin enrollment are authorized. No credentials or enrollment changed. Raw logs/XML remain private; only normalized evidence is uploaded. No production functionality or customer approval.",
+  "execution_design": {
+    "trigger": "workflow_dispatch_only",
+    "trusted_ref": "refs/heads/main",
+    "control_environment": "win11p-control-approval",
+    "execution_environment": "win11p-disposable-execution",
+    "report_environment": "win11p-independent-report",
+    "runner_labels": [
+      "self-hosted",
+      "Windows",
+      "X64",
+      "aronexa-win11p-ephemeral"
+    ],
+    "runner_policy_exception_required": true,
+    "ephemeral_one_job_vm_required": true,
+    "source_credentials_in_execution": false,
+    "product_status_credentials_in_execution": false,
+    "portable_runtime": "Java21 jlink ALL-MODULE-PATH; actual java.home checked in both phase reports",
+    "operator_mode": "independent human in isolated VM console; fresh Pilot09 lab; nonempty observation plus bound issue38 receipts",
+    "full_maven_failure_blocks_positive_status": true
+  }
 }

@@ -1,0 +1,200 @@
+name: WIN11P Reception independent QA (manual proposal)
+run-name: "WIN11P ${{ github.run_id }}-${{ github.run_attempt }} / ${{ inputs.source_sha }}"
+# DRAFT_NOT_ACTIVATED. No product execution on PR events or in privileged jobs.
+on:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: Exact current draft PR148 head from reviewed plan
+        required: true
+        type: string
+      acknowledge_disposable_only:
+        description: Fresh synthetic-only disposable Windows VM and PostgreSQL17
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: win11p-manual-${{ inputs.source_sha }}
+  cancel-in-progress: false
+jobs:
+  prepare:
+    name: Validate reviewed request and freeze credential-free inputs
+    runs-on: ubuntu-latest
+    environment: win11p-control-approval
+    permissions:
+      contents: read
+      pull-requests: read
+    timeout-minutes: 10
+    outputs:
+      context_sha: ${{ steps.bundle.outputs.context_sha256 }}
+      source_bundle_sha: ${{ steps.bundle.outputs.source_bundle_sha256 }}
+      qa_archive_sha: ${{ steps.bundle.outputs.qa_archive_sha256 }}
+    steps:
+      - name: Require separately authorized trusted revision before source access
+        env:
+          AUTHORIZED_QA_SHA: ${{ vars.WIN11P_AUTHORIZED_QA_SHA }}
+          WINDOWS_RUNNER_APPROVED: ${{ vars.WIN11P_WINDOWS_RUNNER_APPROVED }}
+          ACK: ${{ inputs.acknowledge_disposable_only }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$GITHUB_REPOSITORY" = ARG-Digital-Solutions/aronexa-qa-central
+          test "$GITHUB_REF" = refs/heads/main
+          test "$GITHUB_SHA" = "$AUTHORIZED_QA_SHA"
+          test "$WINDOWS_RUNNER_APPROVED" = true
+          test "$ACK" = true
+          [[ "$SOURCE_SHA" =~ ^[0-9a-f]{40}$ ]]
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: qa
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Read independent QA code review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/37" > qa-pr.json
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/pulls/37/reviews?per_page=100" > qa-reviews.json
+      - name: Read current draft source metadata
+        env:
+          GH_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN"
+          gh api repos/ARG-Digital-Solutions/aronexa-healthcare-platform/pulls/148 > source-pr.json
+      - uses: actions/checkout@v4
+        with:
+          repository: ARG-Digital-Solutions/aronexa-healthcare-platform
+          ref: ${{ inputs.source_sha }}
+          token: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+          path: app
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Validate exact scope and bundle only committed source
+        id: bundle
+        env:
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          AUTHORIZED_QA_SHA: ${{ vars.WIN11P_AUTHORIZED_QA_SHA }}
+          REVIEWED_QA_SHA: ${{ vars.WIN11P_REVIEWED_QA_SHA }}
+          WINDOWS_RUNNER_APPROVED: ${{ vars.WIN11P_WINDOWS_RUNNER_APPROVED }}
+          REVIEWER_LOGIN: ${{ vars.WIN11P_REVIEWER_LOGIN }}
+          OPERATOR_LOGIN: ${{ vars.WIN11P_OPERATOR_LOGIN }}
+          DISPOSABLE_ACK: ${{ inputs.acknowledge_disposable_only }}
+        run: python3 qa/scripts/win11p_control.py prepare --app app --output "$RUNNER_TEMP/win11p-input"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: win11p-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/win11p-input/
+          if-no-files-found: error
+          retention-days: 1
+  execute:
+    name: Unprivileged one-job Windows lab
+    needs: prepare
+    # Enrollment/provisioning and policy exception are separate admin decisions.
+    runs-on: [self-hosted, Windows, X64, aronexa-win11p-ephemeral]
+    environment: win11p-disposable-execution
+    timeout-minutes: 180
+    outputs:
+      artifact_id: ${{ steps.evidence.outputs.artifact-id }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: win11p-input-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/win11p-input
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Verify QA archive before loading execution script
+        env:
+          EXPECTED_QA_ARCHIVE_SHA: ${{ needs.prepare.outputs.qa_archive_sha }}
+        shell: pwsh
+        run: |
+          $archive=Join-Path $env:RUNNER_TEMP 'win11p-input/qa.zip'
+          if((Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $env:EXPECTED_QA_ARCHIVE_SHA){throw 'QA archive digest mismatch'}
+          $target=Join-Path $env:RUNNER_TEMP 'win11p-bootstrap'
+          if(Test-Path -LiteralPath $target){throw 'Bootstrap directory exists'}
+          Expand-Archive -LiteralPath $archive -DestinationPath $target
+      - name: Execute retained gates without source-read or status-write token
+        env:
+          WIN11P_EPHEMERAL_EXECUTION: AUTHORIZED_ONE_JOB_VM
+          EXPECTED_CONTEXT_SHA: ${{ needs.prepare.outputs.context_sha }}
+          EXPECTED_SOURCE_BUNDLE_SHA: ${{ needs.prepare.outputs.source_bundle_sha }}
+          EXPECTED_QA_ARCHIVE_SHA: ${{ needs.prepare.outputs.qa_archive_sha }}
+        shell: pwsh
+        run: |
+          & (Join-Path $env:RUNNER_TEMP 'win11p-bootstrap/scripts/Invoke-Win11pReception.ps1') -InputDirectory (Join-Path $env:RUNNER_TEMP 'win11p-input') -ExpectedContextSha $env:EXPECTED_CONTEXT_SHA -ExpectedSourceBundleSha $env:EXPECTED_SOURCE_BUNDLE_SHA -ExpectedQaArchiveSha $env:EXPECTED_QA_ARCHIVE_SHA
+      - name: Upload only normalized evidence
+        id: evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: win11p-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/win11p-public/evidence.json
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 14
+  report:
+    name: Verify exact artifact and independent receipts before status
+    needs: [prepare, execute]
+    if: needs.execute.result == 'success'
+    runs-on: ubuntu-latest
+    environment: win11p-independent-report
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          path: qa
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Recheck current source metadata
+        env:
+          GH_TOKEN: ${{ secrets.ARONEXA_SOURCE_READ_TOKEN }}
+        run: |
+          test -n "$GH_TOKEN"
+          gh api repos/ARG-Digital-Solutions/aronexa-healthcare-platform/pulls/148 > source-pr.json
+      - name: Recheck independent QA approval
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/pulls/37" > qa-pr.json
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/pulls/37/reviews?per_page=100" > qa-reviews.json
+      - name: Validate artifact digest, run identity, counts and independent dispositions
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+          AUTHORIZED_QA_SHA: ${{ vars.WIN11P_AUTHORIZED_QA_SHA }}
+          REVIEWED_QA_SHA: ${{ vars.WIN11P_REVIEWED_QA_SHA }}
+          WINDOWS_RUNNER_APPROVED: ${{ vars.WIN11P_WINDOWS_RUNNER_APPROVED }}
+          REVIEWER_LOGIN: ${{ vars.WIN11P_REVIEWER_LOGIN }}
+          OPERATOR_LOGIN: ${{ vars.WIN11P_OPERATOR_LOGIN }}
+          DISPOSABLE_ACK: ${{ inputs.acknowledge_disposable_only }}
+          EXECUTION_RESULT: ${{ needs.execute.result }}
+          ARTIFACT_ID: ${{ needs.execute.outputs.artifact_id }}
+          SOURCE_BUNDLE_SHA: ${{ needs.prepare.outputs.source_bundle_sha }}
+          QA_ARCHIVE_SHA: ${{ needs.prepare.outputs.qa_archive_sha }}
+        run: |
+          python3 qa/scripts/win11p_control.py report --artifact-id "$ARTIFACT_ID" --source-bundle-sha "$SOURCE_BUNDLE_SHA" --qa-archive-sha "$QA_ARCHIVE_SHA"
+      - name: Publish using isolated product-status-only credential
+        env:
+          GH_TOKEN: ${{ secrets.ARONEXA_DEV_STATUS_TOKEN }}
+          SOURCE_SHA: ${{ inputs.source_sha }}
+        run: |
+          test -n "$GH_TOKEN"
+          gh api "repos/ARG-Digital-Solutions/aronexa-healthcare-platform/statuses/$SOURCE_SHA" --method POST --input status.json --silent
+      - name: Preserve independent evidence receipt in QA issue38
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api "repos/$GITHUB_REPOSITORY/issues/38/comments" --method POST --input receipt.json --silent
