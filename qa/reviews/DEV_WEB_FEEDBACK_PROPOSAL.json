@@ -3,7 +3,7 @@
   "document_kind": "DEVELOPMENT_FEEDBACK_QA_PROPOSAL_NOT_ACTIVATION",
   "proposal_id": "DEV_WEB_FEEDBACK",
   "source_repository": "ARG-Digital-Solutions/aronexa-healthcare-platform",
-  "source_expected_head_sha": "686c0701d6e7d3760634d10c550863955290dfc9",
+  "source_expected_head_sha": "285bbde99496a84a08a32f35a1e9d32f598146a0",
   "source_baseline_sha": "ce0ed7b56d8293a0f74421974b459e6c420969c5",
   "source_branch": "codex/web-first-feedback",
   "proposed_changed_paths": [
@@ -16,7 +16,8 @@
     "scripts/Stop-AroNexa-WebLab.ps1",
     "scripts/Test-AroNexa-Feature.ps1",
     "scripts/WebLab.psm1",
-    "scripts/tests/Test-WebLab.ps1"
+    "scripts/tests/Test-WebLab.ps1",
+    "scripts/tests/test_web_lab_source_drift.py"
   ],
   "head_blobs": {
     ".gitignore": "31b736b758e8da44c4e1916379c52157a3240e06",
@@ -26,9 +27,10 @@
     "docs/superpowers/plans/2026-11-16-web-first-feedback.md": "5504c6f0f7490a4fd61aecea05c29e81e46edf99",
     "scripts/Start-AroNexa-WebLab.ps1": "b7c3a92e8701bf6048a31d0b6db644b430ebe63e",
     "scripts/Stop-AroNexa-WebLab.ps1": "957eed283a7de966b00abb7c6c7b883df452deec",
-    "scripts/Test-AroNexa-Feature.ps1": "6063f59f41c1a53d92ba87f9e86cb00229ca02bb",
+    "scripts/Test-AroNexa-Feature.ps1": "2308bd04587aecc165c842fa1d83d5fcae81cdea",
     "scripts/WebLab.psm1": "b078f83cd257761482871803da35f5e2d309aae9",
-    "scripts/tests/Test-WebLab.ps1": "839e1d17ce71525eed58c0eb2539d0de3104cfb4"
+    "scripts/tests/Test-WebLab.ps1": "839e1d17ce71525eed58c0eb2539d0de3104cfb4",
+    "scripts/tests/test_web_lab_source_drift.py": "362fa4cc9c89644ed7d46b07dfd92803d8da81ed"
   },
   "qa_workflow": null,
   "execution_authorized": false,
